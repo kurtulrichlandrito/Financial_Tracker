@@ -6,10 +6,17 @@ class UserSerializer(ModelSerializer):
         model = User
         fields = ('username', 'password')
 
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            password=validated_data['password']
+        )
+        return user
+
 class ExpenseCategorySerializer(ModelSerializer):
     class Meta:
-        model = Expense
-        fields = ('user', 'name') 
+        model = ExpenseCategory
+        fields = ('user', 'expense_category') 
 
 class ExpenseSerializer(ModelSerializer):
     class Meta:

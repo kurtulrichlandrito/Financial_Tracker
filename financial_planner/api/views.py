@@ -9,6 +9,7 @@ from django.contrib.auth import authenticate, login
 # Create your views here.
 
 class CreateExpense(APIView):
+    serializer_class = ExpenseSerializer
     def post(self, request, format=None):
         serializer = ExpenseSerializer(data=request.data)
 
@@ -28,6 +29,7 @@ class GetExpense(APIView):
         return Response({'Message': 'User Not Does not Exist'}, status=status.HTTP_400_BAD_REQUEST)
 
 class CreateUser(APIView):
+    serializer_class = UserSerializer
     def post(self, request, format=None):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -37,6 +39,7 @@ class CreateUser(APIView):
 
 
 class LoginUser(APIView):
+    serializer_class = UserSerializer
     def post(self, request, format=None):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -48,6 +51,7 @@ class LoginUser(APIView):
         return Response({'Message': 'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)
     
 class CreateExpenseCategory(APIView):
+    serializer_class = ExpenseCategorySerializer
     def post(self, request, format=None):
         serializer = ExpenseCategorySerializer(data=request.data)
         
@@ -70,6 +74,7 @@ class GetExpenseCategory(APIView):
 
 
 class CreateAsset(APIView):
+    serializer_class = AssetSerializer
     def post(self, request, format=None):
         serializer = AssetSerializer(data=request.data)
         
@@ -82,6 +87,7 @@ class CreateAsset(APIView):
         return Response({'Message': 'Invalid Request'}, status=status.HTTP_400_BAD_REQUEST)
 
 class CreateLiability(APIView):
+    serializer_class = LiabilitySerializer
     def post(self, request, format=None):
         serializer = LiabilitySerializer(data=request.data)
         
