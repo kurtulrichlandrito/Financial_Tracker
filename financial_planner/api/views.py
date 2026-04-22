@@ -60,7 +60,7 @@ class CreateExpenseCategory(APIView):
         return Response({'Message': 'Invalid Request'}, status=status.HTTP_400_BAD_REQUEST)
             
 
-class getExpenseCategory(APIView):
+class GetExpenseCategory(APIView):
     def get(self, request, format=None):
         if self.request.user.is_authenticated:
             categories = ExpenseCategory.objects.all()
