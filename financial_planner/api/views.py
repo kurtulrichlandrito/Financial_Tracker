@@ -102,4 +102,10 @@ class CreateLiability(APIView):
 class LogoutUser(APIView):
     def post(self, request, format=None):
         logout(request)
-        return Response({'Message': 'Logged out'}, status=status.HTTP_200_OK)
+        return Response({'Message': 'Logout Successful'}, status=status.HTTP_200_OK)
+
+class CheckAuth(APIView):
+    def get(self, request, format=None):
+        if request.user.is_authenticated:
+            return Response({'isAuthenticated': True})
+        return Response({'isAuthenticated': False})
