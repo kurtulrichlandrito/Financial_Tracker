@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import *
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 
 
 # Create your views here.
@@ -98,3 +98,8 @@ class CreateLiability(APIView):
                 return Response({'Message': 'Added Liability'}, status=status.HTTP_200_OK)
             return Response({'Message': 'User Not Does not Exist'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'Message': 'Invalid Request'}, status=status.HTTP_400_BAD_REQUEST)
+    
+class LogoutUser(APIView):
+    def post(self, request, format=None):
+        logout(request)
+        return Response({'Message': 'Logged out'}, status=status.HTTP_200_OK)

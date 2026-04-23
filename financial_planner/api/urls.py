@@ -8,6 +8,7 @@ urlpatterns = [
     path('get-expense-category', GetExpenseCategory.as_view()),
     path('signup', CreateUser.as_view()),
     path('login', LoginUser.as_view()),
+    path('logout', LogoutUser.as_view()),
     path('create-asset', CreateAsset.as_view()),
     path('create-liability', CreateLiability.as_view()),
 ]
