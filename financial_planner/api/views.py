@@ -33,8 +33,10 @@ class CreateUser(APIView):
     def post(self, request, format=None):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            if not User.objects.filter(email=request.data.get('email')).exists():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'Message': 'Email already Exists'},status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

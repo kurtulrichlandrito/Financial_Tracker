@@ -1,7 +1,20 @@
 from rest_framework.serializers import ModelSerializer
+from rest_framework import serializers
 from .models import *
 
 class UserSerializer(ModelSerializer):
+    first_name = serializers.CharField(required=True, error_messages={
+    'blank': 'First name is required.',
+    'required': 'First name is required.',
+})
+    last_name = serializers.CharField(required=True, error_messages={
+    'blank': 'Last name is required.',
+    'required': 'Last name is required.',
+})
+    email = serializers.EmailField(required=True, error_messages={
+    'blank': 'Email is required.',
+    'required': 'Email is required.',
+})
     class Meta: 
         model = User
         fields = ('first_name',
@@ -9,6 +22,7 @@ class UserSerializer(ModelSerializer):
                    'email', 
                    'username', 
                    'password', )
+        
 
     def create(self, validated_data):
         user = User.objects.create_user(
