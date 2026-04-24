@@ -12,4 +12,5 @@ urlpatterns = [
     path('create-asset', CreateAsset.as_view()),
     path('create-liability', CreateLiability.as_view()),
     path('check-auth', CheckAuth.as_view()),
+    path('upload-files', ImportExpenses.as_view())
 ]

@@ -16,6 +16,9 @@ class Expense(models.Model):
     expense_amount = models.DecimalField(max_digits=10, decimal_places=2)
     expense_notes = models.TextField(null=True, blank=True)
 
+    def __str__(self):
+        return f"{self.expense_amount} - {self.expense_date} - {self.expense_notes}"
+
 class IncomeCategory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     income_name = models.CharField(max_length=100)

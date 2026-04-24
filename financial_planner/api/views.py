@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import *
 from django.contrib.auth import authenticate, login, logout
-
+from .utils.data_extraction import data_extractor
 
 # Create your views here.
 
@@ -22,9 +22,10 @@ class CreateExpense(APIView):
 
 class GetExpense(APIView):
     def get(self, request, format=None):
-        if self.request.user.is_authenticated:
-            expenses = Expense.objects.all()
-            serializer = Expense(expenses, many=True)
+        user = self.request.user
+        if user.is_authenticated:
+            expenses = Expense.objects.all().filter(user=user)
+            serializer = ExpenseSerializer(expenses, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response({'Message': 'User Not Does not Exist'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -102,8 +103,8 @@ class CreateLiability(APIView):
             if user.is_authenticated:
                 serializer.save()
                 return Response({'Message': 'Added Liability'}, status=status.HTTP_200_OK)
-            return Response({'Message': 'User Not Does not Exist'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'Message': 'Invalid Request'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'Message': 'User Not Does not Exist'}, status=status.HTTP_401_UNAUTHORIZED)
+        
     
 class LogoutUser(APIView):
     def post(self, request, format=None):
@@ -115,3 +116,24 @@ class CheckAuth(APIView):
         if request.user.is_authenticated:
             return Response({'isAuthenticated': True})
         return Response({'isAuthenticated': False})
+    
+class ImportExpenses(APIView):
+
+    def post(self, request, format=None):
+        user = self.request.user
+        if user.is_authenticated:
+            file = self.request.FILES.get('file')
+            data = data_extractor(file)
+            if (data):
+                all_valid = True
+                for transaction in data:
+                    serializer = ExpenseSerializer(data=transaction)
+                    if serializer.is_valid():
+                        serializer.save(user=user)
+                    else:
+                        all_valid = False
+                if all_valid:
+                    return Response({'Message': 'All Transactions Imported Successfully'}, status=status.HTTP_200_OK)
+                return Response({'Message': 'Some transactions have invalid fields'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'Message': 'File uploaded is not valid'}, status=status.HTTP_400_BAD_REQUEST)    
+        return Response({'Message': 'User Not Does not Exist'}, status=status.HTTP_401_UNAUTHORIZED)

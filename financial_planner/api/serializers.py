@@ -44,6 +44,7 @@ class ExpenseSerializer(ModelSerializer):
     class Meta:
         model = Expense
         fields = ('user', 
+                  'id',
                   'expense_date', 
                   'expense_category', 
                   'expense_amount', 
