@@ -58,9 +58,13 @@ class CreateExpenseCategory(APIView):
         if serializer.is_valid():
             user = self.request.user
             if user.is_authenticated:
-                serializer.save()
-                return Response({'Message': 'Added Expense Category'}, status=status.HTTP_200_OK)
-            return Response({'Message': 'User Not Does not Exist'}, status=status.HTTP_400_BAD_REQUEST)
+                expense_category = request.data.get('expense_category')
+                exists = ExpenseCategory.objects.filter( user=request.user, expense_category=expense_category).exists()
+                if not exists:
+                    serializer.save(user=self.request.user)
+                    return Response({'Message': 'Added Expense Category'}, status=status.HTTP_200_OK)
+                return Response({'Message': 'Category Already Exists'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'Message': 'User Not Does not Exist'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response({'Message': 'Invalid Request'}, status=status.HTTP_400_BAD_REQUEST)
             
 
