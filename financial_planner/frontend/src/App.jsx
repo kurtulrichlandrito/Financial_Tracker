@@ -7,6 +7,7 @@ import heroImg from './assets/hero.png'
 import './App.css'
 import Login from './components/auth/Login'
 import Dashboard from './components/Dashboard'
+import Register from './components/auth/Register';
 
 function App() {
 
@@ -33,6 +34,7 @@ function App() {
         <Route path="/" element={<AuthCheck />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/register" element={<Register />} />
       </Routes>
     </BrowserRouter>
   )
