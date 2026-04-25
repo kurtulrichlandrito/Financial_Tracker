@@ -41,3 +41,8 @@ class Liability(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     liability_name = models.CharField(max_length=100)
     liability_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+class CategoryRule(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    keyword = models.CharField(max_length=255)
+    category = models.ForeignKey(ExpenseCategory, on_delete=models.CASCADE)

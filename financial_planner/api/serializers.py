@@ -37,7 +37,7 @@ class UserSerializer(ModelSerializer):
 class ExpenseCategorySerializer(ModelSerializer):
     class Meta:
         model = ExpenseCategory
-        fields = ('user', 'expense_category') 
+        fields = ('user', 'id', 'expense_category') 
         read_only_fields = ('user',)
 
 class ExpenseSerializer(ModelSerializer):
@@ -54,23 +54,23 @@ class ExpenseSerializer(ModelSerializer):
 class IncomeCategorySerializer(ModelSerializer):
     class Meta:
         model = Expense
-        fields = ('user', 'income_name')
+        fields = ('user', 'id', 'income_name')
         read_only_fields = ('user',) 
 
 class IncomeSerializer(ModelSerializer):
     class Meta:
         model = Expense
-        fields = ('user', 'income_category', 'income_amount')
+        fields = ('user', 'id', 'income_category', 'income_amount')
         read_only_fields = ('user',)
 
 class AssetSerializer(ModelSerializer):
     class Meta:
         model = Asset
-        fields = ('user', 'asset_name', 'asset_amount')
+        fields = ('user', 'id', 'asset_name', 'asset_amount')
         read_only_fields = ('user',)
 
 class LiabilitySerializer(ModelSerializer):
     class Meta:
         model = Liability
-        fields = ('user', 'liability_name', 'liability_amount')
+        fields = ('user', 'id', 'liability_name', 'liability_amount')
         read_only_fields = ('user',)
