@@ -15,11 +15,12 @@ function Dashboard() {
     const [isUploadOpen, setUploadIsOpen] = useState(false)
     const [isAssetOpen, setAssetIsOpen] = useState(false)
     const [isLiabilityOpen, setLiabilityIsOpen] = useState(false)
+    const [refresh, setRefresh] = useState(false)
     const navigate = useNavigate()
 
 
     const Logout = () => {
-        apiPost('/api/logout')
+        apiPost('/api/logout/')
             .then(response => response.json())
             .then(data => {
                 if (data.Message === 'Logout Successful') {
@@ -52,7 +53,7 @@ function Dashboard() {
                 <p>Add Income Category</p>
                 <button onClick={() => setUploadIsOpen(true)}>Upload</button>
                 <Dialog open={isUploadOpen} onClose={() => setUploadIsOpen(false)}>
-                    <UploadFiles />
+                    <UploadFiles onSubmit={() => setRefresh(!refresh)} refresh={refresh} />
                 </Dialog>
                 <p>Add Bank Statements</p>
                 <button onClick={() => setAssetIsOpen(true)}>Asset</button>
@@ -70,7 +71,7 @@ function Dashboard() {
             <button onClick={Logout}>Logout</button>
             <div>
                 <h2>Temporary Table</h2>
-                <ExpenseList />
+                <ExpenseList refresh={refresh} />
             </div>
         </div>
     )

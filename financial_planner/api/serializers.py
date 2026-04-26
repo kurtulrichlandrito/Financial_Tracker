@@ -41,6 +41,10 @@ class ExpenseCategorySerializer(ModelSerializer):
         read_only_fields = ('user',)
 
 class ExpenseSerializer(ModelSerializer):
+    expense_category = serializers.CharField(
+        source='expense_category.expense_category', 
+        read_only=True
+    )
     class Meta:
         model = Expense
         fields = ('user', 

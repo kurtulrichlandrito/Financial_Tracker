@@ -179,7 +179,7 @@ class ImportExpenses(APIView):
                         exists = Expense.objects.filter(
                         user=self.request.user,
                         expense_date= transaction['expense_date'],
-                         expense_amount=serializer.data['expense_amount']
+                         expense_amount=transaction['expense_amount']
                         ).exists()
                         if not exists:
                             serializer.save(user=user)

@@ -6,7 +6,7 @@ function CreateIncomeCategory() {
     const [message, setMessage] = useState('')
 
     const handleAddButton = () => {
-        apiPost('/api/create-income-category', { income_category })
+        apiPost('/api/create-income-category/', { income_category })
             .then((response) => response.json())
             .then((data) => setMessage(data.Message))
     }

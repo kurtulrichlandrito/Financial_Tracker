@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react"
 
-function ExpenseList() {
+function ExpenseList(props) {
     const [state, setState] = useState('')
     const [expenses, setExpenses] = useState([])
 
     useEffect(() => {
-        fetch('/api/get-expenses', {
+        fetch('/api/get-expenses/', {
             credentials: 'include'
         })
             .then(response => response.json())
             .then(data => { setExpenses(data) })
-    }, [])
+    }, [props.refresh])
     return (
         <div>
             <h3>All Expenses</h3>
@@ -19,6 +19,7 @@ function ExpenseList() {
                     <tr>
                         <td>Date</td>
                         <td>Amount</td>
+                        <td>Category</td>
                         <td>Notes</td>
                     </tr>
                 </thead>
@@ -27,6 +28,7 @@ function ExpenseList() {
                         <tr key={expense.id}>
                             <td>{expense.expense_date}</td>
                             <td>{expense.expense_amount}</td>
+                            <td>{expense.expense_category}</td>
                             <td>{expense.expense_notes}</td>
                         </tr>
                     ))}

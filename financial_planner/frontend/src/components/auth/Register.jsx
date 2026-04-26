@@ -35,7 +35,7 @@ function Register() {
     )
     function handleRegister() {
         event.preventDefault()
-        apiPost('/api/signup', { first_name, last_name, email, username, password })
+        apiPost('/api/signup/', { first_name, last_name, email, username, password })
             .then((response) => {
 
                 if (response.ok) {

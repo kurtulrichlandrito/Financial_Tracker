@@ -7,7 +7,7 @@ function CreateLiability() {
     const [message, setMessage] = useState('')
 
     const handleAddButton = () => {
-        apiPost('/api/create-liability', { liability_name, liability_amount })
+        apiPost('/api/create-liability/', { liability_name, liability_amount })
             .then((response) => response.json())
             .then((data) => setMessage(data.Message))
             .catch()

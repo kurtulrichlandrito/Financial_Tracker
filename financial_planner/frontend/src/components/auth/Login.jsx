@@ -17,7 +17,7 @@ function Login() {
                 password: password
             })
         }
-        fetch('/api/login', RequestOptions)
+        fetch('/api/login/', RequestOptions)
             .then((response) => {
 
                 if (response.ok) {

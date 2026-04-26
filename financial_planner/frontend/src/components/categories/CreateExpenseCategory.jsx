@@ -1,7 +1,7 @@
 import { useState, useEffect, Fragment } from "react"
 import apiPost from '../../utils/api'
 
-function CreateExpenseCategory() {
+function CreateExpenseCategory(props) {
     const [expense_category, setExpenseCategory] = useState('')
     const [message, setMessage] = useState('')
     const [expense_categories, setExpenseCategories] = useState([])
