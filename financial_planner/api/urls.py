@@ -15,4 +15,6 @@ urlpatterns = [
     path('upload-files/', ImportExpenses.as_view()),
     path('get-grouped-expenses/', GetGroupedExpenses.as_view()),
     path('update-expenses/', UpdateExpenses.as_view()),
+    path('get-liability/', GetLiability.as_view()),
+    path('get-asset/', GetAsset.as_view()),
 ]
