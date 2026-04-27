@@ -25,6 +25,6 @@ def data_extractor(file, account_type):
             else 'expense')
         transaction_data.append({f'{transaction_type}_date':transaction_date,
                                 f'{transaction_type}_amount': transaction_amount,
-                                f'{transaction_type}_notes': transaction_notes})
+                                f'{transaction_type}_notes': transaction_notes.strip()})
     return transaction_data
 
