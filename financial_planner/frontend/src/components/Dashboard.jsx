@@ -12,6 +12,7 @@ import AssetList from "./asset/AssetList"
 import LiabilityList from "./liabilities/LiabilityList";
 import IncomeList from "./income/IncomeList";
 import CreateTransactionCategory from "./categories/CreateExpenseCategory";
+import ExpenseChart from "./charts/ExpenseChart";
 
 function Dashboard() {
     const [isExpenseOpen, setExpenseIsOpen] = useState(false)
@@ -37,6 +38,8 @@ function Dashboard() {
             <h1>THIS IS THE DASHBOARD</h1>
             <div>
                 <h2>Account Overview</h2>
+                <ExpenseChart type="expense" />
+                <ExpenseChart type="income" />
             </div>
 
             <div>
