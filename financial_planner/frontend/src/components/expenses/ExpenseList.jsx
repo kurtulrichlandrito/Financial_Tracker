@@ -5,7 +5,8 @@ function ExpenseList(props) {
     const [expenses, setExpenses] = useState([])
 
     useEffect(() => {
-        fetch('/api/get-expenses/', {
+        fetch('/api/expense/', {
+            method: 'GET',
             credentials: 'include'
         })
             .then(response => response.json())

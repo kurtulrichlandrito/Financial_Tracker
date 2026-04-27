@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from "react"
-import apiPost from '../../utils/api'
+import { apiPost, apiPatch } from '../../utils/api'
 
 function CreateExpenseCategory(props) {
     const [expense_category, setExpenseCategory] = useState('')
@@ -14,7 +14,7 @@ function CreateExpenseCategory(props) {
 
 
     const handleAddButton = () => {
-        apiPost('/api/create-expense-category/', { expense_category })
+        apiPost('/api/expense-category/', { expense_category })
             .then((response) => response.json())
             .then((data) => {
                 setMessage(data.Message)
@@ -24,7 +24,8 @@ function CreateExpenseCategory(props) {
 
 
     const getCategories = () => {
-        fetch('/api/get-expense-category/', {
+        fetch('/api/expense-category/', {
+            method: 'GET',
             credentials: 'include'
         })
             .then(response => response.json())
@@ -40,15 +41,25 @@ function CreateExpenseCategory(props) {
             credentials: 'include'
         })
             .then(response => response.json())
-            .then(data => setGroupExpenseCategory(data))
+            .then(data => {
+                setGroupExpenseCategory(data)
+                console.log(data)
+                const suggestedCategories = {}
+                Object.entries(data).forEach(([key, group]) => {
+                    if (group.suggested_category) {
+                        suggestedCategories[key] = group.suggested_category
+                    }
+                })
+                setCategorizedExpense(suggestedCategories)
+            })
     }, [refresh])
 
     const handleSubmit = () => {
         const categorizedData = Object.entries(categorizedExpense).map(([expenseGroupKey, category]) => ({
             category,
-            expenseIds: (groupedExpenses[expenseGroupKey] || []).map(expense => expense.id)
+            expenseIds: (groupedExpenses[expenseGroupKey].expense || []).map(expense => expense.id)
         }))
-        apiPost('/api/update-expenses/', categorizedData)
+        apiPatch('/api/expense/', categorizedData)
             .then(response => response.json())
             .then((data) => {
                 setSubmitMessage(data.Message)
@@ -74,7 +85,7 @@ function CreateExpenseCategory(props) {
                         <tr key={key} onClick={() => setExpandedRow(expandedRow === key ? null : key)}>
                             <td>{expandedRow === key ? '▼' : '▶'}</td>
                             <td>{key}</td>
-                            <td>{expenseGroup.length} transactions</td>
+                            <td>{expenseGroup.expense.length} transactions</td>
                             <td>
                                 <select onClick={(e) => e.stopPropagation()} onChange={(e) => {
                                     setCategorizedExpense({
@@ -84,7 +95,7 @@ function CreateExpenseCategory(props) {
                                     setSubmitMessage('')
                                 }
                                 }
-                                    defaultValue="">
+                                    defaultValue={expenseGroup.suggested_category ? expenseGroup.suggested_category : ''}>
                                     <option value="" disabled hidden>Please choose...</option>
                                     {expense_categories.map((category) => (
                                         <option
@@ -96,7 +107,7 @@ function CreateExpenseCategory(props) {
                                 </select>
                             </td>
                         </tr>
-                        {expandedRow === key && expenseGroup.map((expense) => (
+                        {expandedRow === key && expenseGroup.expense.map((expense) => (
                             <tr key={expense.id}>
                                 <td></td>
                                 <td>{expense.expense_date}</td>

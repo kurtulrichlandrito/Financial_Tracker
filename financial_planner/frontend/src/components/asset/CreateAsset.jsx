@@ -7,14 +7,14 @@ function CreateAsset() {
     const [message, setMessage] = useState('')
 
     const handleAddButton = () => {
-        apiPost('/api/create-asset', { asset_name, asset_amount })
+        apiPost('/api/asset/', { asset_name, asset_amount })
             .then((response) => response.json())
             .then((data) => setMessage(data.Message))
             .catch()
     }
     return (
         <div>
-            <h1>Add A Liability</h1>
+            <h1>Add An Asset</h1>
             <input type="text" onChange={(e) => {
                 setAssetName(e.target.value)
                 setMessage('')

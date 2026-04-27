@@ -8,42 +8,6 @@ from .utils.data_extraction import data_extractor
 from .utils.group_by_description import get_or_create_group
 
 # Create your views here.
-
-class CreateExpense(APIView):
-    serializer_class = ExpenseSerializer
-    def post(self, request, format=None):
-        serializer = ExpenseSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(
-            {'Message': 'Invalid Request'}, 
-            status=status.HTTP_400_BAD_REQUEST)
-        
-        if not self.request.user.is_authenticated:
-            return Response(
-            {'Message': 'User Not Does not Exist'}, 
-            status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer.save()
-        return Response(
-            {'Message': 'Added Expense'}, 
-            status=status.HTTP_200_OK)
-        
-        
-
-class GetExpense(APIView):
-    def get(self, request, format=None):
-        user = self.request.user
-        if not user.is_authenticated:
-            return Response(
-            {'Message': 'User Not Does not Exist'}, 
-            status=status.HTTP_400_BAD_REQUEST)
-        
-        expenses = Expense.objects.all().filter(user=user)
-        serializer = ExpenseSerializer(expenses, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-        
-
 class CreateUser(APIView):
     serializer_class = UserSerializer
     def post(self, request, format=None):
@@ -60,10 +24,7 @@ class CreateUser(APIView):
         
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        
-
-
+  
 class LoginUser(APIView):
     serializer_class = UserSerializer
     def post(self, request, format=None):
@@ -82,9 +43,79 @@ class LoginUser(APIView):
         return Response(
             {'Message': 'Login Successful'}, 
             status=status.HTTP_200_OK)
+
+class LogoutUser(APIView):
+    def post(self, request, format=None):
+        logout(request)
+        return Response(
+            {'Message': 'Logout Successful'}, 
+            status=status.HTTP_200_OK)
+
+class CheckAuth(APIView):
+    def get(self, request, format=None):
+        if self.request.user.is_authenticated:
+            return Response({'isAuthenticated': True})
+            
+        return Response({'isAuthenticated': False})
+   
+class Expenses(APIView):
+    serializer_class = ExpenseSerializer
+    def post(self, request, format=None):
+        serializer = ExpenseSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+            {'Message': 'Invalid Request'}, 
+            status=status.HTTP_400_BAD_REQUEST)
         
+        if not self.request.user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+        return Response(
+            {'Message': 'Added Expense'}, 
+            status=status.HTTP_200_OK)
     
-class CreateExpenseCategory(APIView):
+    def get(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        expenses = Expense.objects.all().filter(user=user)
+        serializer = ExpenseSerializer(expenses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def patch(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'Unauthorized'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        data = self.request.data
+        for item in data:
+            category = item.get('category')
+            category_id = ExpenseCategory.objects.get(expense_category=category, 
+                                                      user=self.request.user)
+            expense_ids = item.get('expenseIds')
+            expense = Expense.objects.filter(id__in=expense_ids)
+            expense.update(
+                expense_category=category_id)
+            CategoryRule.objects.get_or_create(
+                category=category_id,
+                user=user,
+                keyword=expense.first().expense_notes
+            )
+            
+        return Response(
+            {'Message': 'Categories updated'}, 
+            status=status.HTTP_200_OK)
+           
+class ExpenseCategories(APIView):
     serializer_class = ExpenseCategorySerializer
     def post(self, request, format=None):
         serializer = ExpenseCategorySerializer(data=request.data)
@@ -113,12 +144,7 @@ class CreateExpenseCategory(APIView):
         return Response(
             {'Message': 'Added Expense Category'}, 
             status=status.HTTP_200_OK)
-        
-            
-        
-            
-
-class GetExpenseCategory(APIView):
+    
     def get(self, request, format=None):
         if not self.request.user.is_authenticated:
             return Response(
@@ -130,64 +156,7 @@ class GetExpenseCategory(APIView):
         return Response(
             serializer.data, 
             status=status.HTTP_200_OK)
-        
 
-
-class CreateAsset(APIView):
-    serializer_class = AssetSerializer
-    def post(self, request, format=None):
-        serializer = AssetSerializer(data=request.data)
-        user = self.request.user
-        if not user.is_authenticated:
-            return Response(
-                {'Message': 'User Not Does not Exist'}, 
-                status=status.HTTP_400_BAD_REQUEST)
-        
-        if not serializer.is_valid():
-            return Response(
-            {'Message': 'Invalid Request'}, 
-            status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer.save(user=user)
-        return Response(
-            {'Message': 'Added Asset'}, 
-            status=status.HTTP_200_OK)        
-            
-        
-
-class CreateLiability(APIView):
-    serializer_class = LiabilitySerializer
-    def post(self, request, format=None):
-        serializer = LiabilitySerializer(data=request.data)
-        user = self.request.user
-        if not user.is_authenticated:
-            return Response(
-                {'Message': 'User Not Does not Exist'}, 
-                status=status.HTTP_401_UNAUTHORIZED)
-        
-        if serializer.is_valid():
-            
-            serializer.save(user=user)
-            return Response(
-                {'Message': 'Added Liability'}, 
-                status=status.HTTP_200_OK)
-            
-        
-    
-class LogoutUser(APIView):
-    def post(self, request, format=None):
-        logout(request)
-        return Response(
-            {'Message': 'Logout Successful'}, 
-            status=status.HTTP_200_OK)
-
-class CheckAuth(APIView):
-    def get(self, request, format=None):
-        if self.request.user.is_authenticated:
-            return Response({'isAuthenticated': True})
-            
-        return Response({'isAuthenticated': False})
-    
 class ImportExpenses(APIView):
 
     def post(self, request, format=None):
@@ -212,6 +181,7 @@ class ImportExpenses(APIView):
             serializer = ExpenseSerializer(data=transaction)
             
             if serializer.is_valid():
+                
                 exists = Expense.objects.filter(
                 user=user,
                 expense_date= transaction['expense_date'],
@@ -236,9 +206,7 @@ class ImportExpenses(APIView):
         return Response(
             {'Message': 'All Transactions Imported Successfully'}, 
             status=status.HTTP_200_OK)
-        
-        
-    
+           
 class GetGroupedExpenses(APIView):
     def get(self, request, format=None):
         user = self.request.user
@@ -255,32 +223,38 @@ class GetGroupedExpenses(APIView):
             key = expense.expense_notes.upper().strip()
             matched_key = get_or_create_group(grouped, key)
             if matched_key not in grouped:
-                grouped[matched_key] = []
-            grouped[matched_key].append(ExpenseSerializer(expense).data)
+                rule = CategoryRule.objects.filter(
+            user=request.user,
+            keyword__icontains=matched_key
+            ).first()
+                grouped[matched_key] = {
+                    'expense': [],
+                    'suggested_category': rule.category.expense_category if rule else None
+                }
+            grouped[matched_key]['expense'].append(ExpenseSerializer(expense).data)
         
         return Response(grouped, status=status.HTTP_200_OK)
-    
-class UpdateExpenses(APIView):
+
+class Assets(APIView):
+    serializer_class = AssetSerializer
     def post(self, request, format=None):
-        if not self.request.user.is_authenticated:
+        serializer = AssetSerializer(data=request.data)
+        user = self.request.user
+        if not user.is_authenticated:
             return Response(
-                {'Message': 'Unauthorized'}, 
-                status=status.HTTP_401_UNAUTHORIZED)
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_400_BAD_REQUEST)
         
-        data = self.request.data
-        for item in data:
-            category = item.get('category')
-            category_id = ExpenseCategory.objects.get(expense_category=category, 
-                                                      user=self.request.user)
-            expense_ids = item.get('expenseIds')
-            Expense.objects.filter(id__in=expense_ids).update(
-                expense_category=category_id)
-            
+        if not serializer.is_valid():
+            return Response(
+            {'Message': 'Invalid Request'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save(user=user)
         return Response(
-            {'Message': 'Categories updated'}, 
+            {'Message': 'Added Asset'}, 
             status=status.HTTP_200_OK)
-        
-class GetAsset(APIView):
+
     def get(self, request, format=None):
         if not self.request.user.is_authenticated:
             return Response(
@@ -291,10 +265,25 @@ class GetAsset(APIView):
         serializer = AssetSerializer(asset, many=True)
         return Response(
             serializer.data, 
-            status=status.HTTP_200_OK)
+            status=status.HTTP_200_OK)        
+                
+class Liabilities(APIView):
+    serializer_class = LiabilitySerializer
+    def post(self, request, format=None):
+        serializer = LiabilitySerializer(data=request.data)
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
         
+        if serializer.is_valid():
+            
+            serializer.save(user=user)
+            return Response(
+                {'Message': 'Added Liability'}, 
+                status=status.HTTP_200_OK)
     
-class GetLiability(APIView):
     def get(self, request, format=None):
         if not self.request.user.is_authenticated:
             return Response(
@@ -306,4 +295,6 @@ class GetLiability(APIView):
         return Response(
             serializer.data, 
             status=status.HTTP_200_OK)
-        
+
+class Accounts(APIView):
+    pass

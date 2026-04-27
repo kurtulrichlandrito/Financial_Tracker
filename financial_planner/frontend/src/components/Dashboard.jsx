@@ -5,9 +5,11 @@ import Dialog from '@mui/material/Dialog'
 import apiPost from '../utils/api'
 import CreateIncomeCategory from "./categories/CreateIncomeCategory";
 import UploadFiles from "./statements/UploadStatements";
-import CreateAsset from "./assets/CreateAsset";
+import CreateAsset from "./asset/CreateAsset";
 import CreateLiability from "./liabilities/CreateLiability";
 import ExpenseList from "./expenses/ExpenseList";
+import AssetList from "./asset/AssetList"
+import LiabilityList from "./liabilities/LiabilityList";
 
 function Dashboard() {
     const [isExpenseOpen, setExpenseIsOpen] = useState(false)
@@ -70,8 +72,16 @@ function Dashboard() {
             </div>
             <button onClick={Logout}>Logout</button>
             <div>
-                <h2>Temporary Table</h2>
+                <h2>Temporary Expense Table</h2>
                 <ExpenseList refresh={refresh} />
+            </div>
+            <div>
+                <h2>Temporary Asset</h2>
+                <AssetList refresh={refresh} />
+            </div>
+            <div>
+                <h2>Temporary Liability</h2>
+                <LiabilityList refresh={refresh} />
             </div>
         </div>
     )

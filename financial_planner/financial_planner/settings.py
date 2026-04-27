@@ -96,8 +96,8 @@ DATABASES = {
         # "NAME": env.str("DB_NAME", "myapp"),
         # "USER": env.str("DB_USER", "myuser"),
         # "PASSWORD": env.str("DB_PASSWORD"),
-        # "HOST": env.str("DB_HOST", "shinkansen.proxy.rlwy.net"),  # PUBLIC HOST
-        # "PORT": env.str("DB_PORT", "13528"),                    # your PORT
+        # "HOST": env.str("DB_HOST", "shinkansen.proxy.rlwy.net"),
+        # "PORT": env.str("DB_PORT", "13528"),
     }
 }
 

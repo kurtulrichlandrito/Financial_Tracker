@@ -1,32 +1,33 @@
 import { useState, useEffect } from "react"
 
-function LiabilityList(props) {
-    const [liabilities, setLiabilities] = useState([])
+function AssetList(props) {
+    const [state, setState] = useState('')
+    const [assets, setAssets] = useState([])
 
     useEffect(() => {
-        fetch('/api/liability/', {
+        fetch('/api/asset/', {
             method: 'GET',
             credentials: 'include'
         })
             .then(response => response.json())
-            .then(data => { setLiabilities(data) })
+            .then(data => { setAssets(data) })
     }, [props.refresh])
     return (
         <div>
-            <h3>All Liabilities</h3>
+            <h3>All Asset</h3>
             <table>
                 <thead>
                     <tr>
-                        <td>Liability Name</td>
+                        <td>Asset Name</td>
                         <td>Amount</td>
 
                     </tr>
                 </thead>
                 <tbody>
-                    {liabilities.map((liability) => (
-                        <tr key={liability.id}>
-                            <td>{liability.liability_name}</td>
-                            <td>{liability.liability_amount}</td>
+                    {assets.map((asset) => (
+                        <tr key={asset.id}>
+                            <td>{asset.asset_name}</td>
+                            <td>{asset.asset_amount}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -35,4 +36,4 @@ function LiabilityList(props) {
     )
 }
 
-export default LiabilityList
+export default AssetList
