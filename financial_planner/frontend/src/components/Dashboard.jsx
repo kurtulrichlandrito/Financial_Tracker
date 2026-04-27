@@ -10,6 +10,8 @@ import CreateLiability from "./liabilities/CreateLiability";
 import ExpenseList from "./expenses/ExpenseList";
 import AssetList from "./asset/AssetList"
 import LiabilityList from "./liabilities/LiabilityList";
+import IncomeList from "./income/IncomeList";
+import CreateTransactionCategory from "./categories/CreateExpenseCategory";
 
 function Dashboard() {
     const [isExpenseOpen, setExpenseIsOpen] = useState(false)
@@ -45,12 +47,12 @@ function Dashboard() {
                 <h3>Add Categories</h3>
                 <button onClick={() => setExpenseIsOpen(true)}>Expense Category</button>
                 <Dialog open={isExpenseOpen} onClose={() => setExpenseIsOpen(false)}>
-                    <CreateExpenseCategory />
+                    <CreateTransactionCategory type="expense" />
                 </Dialog>
                 <p>Add Expense Category</p>
                 <button onClick={() => setIncomeIsOpen(true)}>Income Category</button>
                 <Dialog open={isIncomeOpen} onClose={() => setIncomeIsOpen(false)}>
-                    <CreateIncomeCategory />
+                    <CreateTransactionCategory type="income" />
                 </Dialog>
                 <p>Add Income Category</p>
                 <button onClick={() => setUploadIsOpen(true)}>Upload</button>
@@ -74,6 +76,10 @@ function Dashboard() {
             <div>
                 <h2>Temporary Expense Table</h2>
                 <ExpenseList refresh={refresh} />
+            </div>
+            <div>
+                <h2>Temporary Income Table</h2>
+                <IncomeList refresh={refresh} />
             </div>
             <div>
                 <h2>Temporary Asset</h2>

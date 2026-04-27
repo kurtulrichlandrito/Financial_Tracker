@@ -57,14 +57,23 @@ class ExpenseSerializer(ModelSerializer):
 
 class IncomeCategorySerializer(ModelSerializer):
     class Meta:
-        model = Expense
-        fields = ('user', 'id', 'income_name')
+        model = IncomeCategory
+        fields = ('user', 'id', 'income_category')
         read_only_fields = ('user',) 
 
 class IncomeSerializer(ModelSerializer):
+    income_category = serializers.CharField(
+        source='income_category.income_category', 
+        read_only=True
+    )
     class Meta:
-        model = Expense
-        fields = ('user', 'id', 'income_category', 'income_amount')
+        model = Income
+        fields = ('user', 
+                  'id',
+                  'income_date', 
+                  'income_category', 
+                  'income_amount',
+                  'income_notes')
         read_only_fields = ('user',)
 
 class AssetSerializer(ModelSerializer):

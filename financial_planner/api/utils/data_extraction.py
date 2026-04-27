@@ -2,7 +2,7 @@ import csv
 from datetime import datetime, date
 import io
 
-def data_extractor(file):
+def data_extractor(file, account_type):
     """Extracts data from a csv file
     
     Args: 
@@ -15,12 +15,16 @@ def data_extractor(file):
     decoded = file.read().decode('utf-8-sig')
     records = csv.DictReader(io.StringIO(decoded))
     transaction_data = []
+
     for record in records:
-        expense_date = datetime.strptime(record['Transaction Date'], "%Y%m%d").date()
-        expense_amount = float(record['Transaction Amount'])
-        expense_notes = str(record['Description'])
-        transaction_data.append({'expense_date':expense_date,
-                                'expense_amount': expense_amount,
-                                'expense_notes': expense_notes})
+        transaction_date = datetime.strptime(record['Transaction Date'], "%Y%m%d").date()
+        transaction_amount = float(record['Transaction Amount'])
+        transaction_notes = str(record['Description'])
+        transaction_type = (
+            'income' if account_type != 'credit' and transaction_amount > 0 
+            else 'expense')
+        transaction_data.append({f'{transaction_type}_date':transaction_date,
+                                f'{transaction_type}_amount': transaction_amount,
+                                f'{transaction_type}_notes': transaction_notes})
     return transaction_data
 

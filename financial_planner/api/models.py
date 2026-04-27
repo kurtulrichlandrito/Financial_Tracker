@@ -22,14 +22,19 @@ class Expense(models.Model):
 
 class IncomeCategory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    income_name = models.CharField(max_length=100)
+    income_category = models.CharField(max_length=100)
     def __str__(self):
-        return self.income_name
+        return self.income_category
 
 class Income(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    income_date = models.DateField()
     income_category = models.ForeignKey(IncomeCategory, null=True, on_delete=models.SET_NULL)
     income_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    income_notes= models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.income_amount} - {self.income_date} - {self.income_notes}"
 
 
 class Asset(models.Model):
@@ -43,13 +48,23 @@ class Liability(models.Model):
     liability_name = models.CharField(max_length=100)
     liability_amount = models.DecimalField(max_digits=10, decimal_places=2)
 
-class CategoryRule(models.Model):
+class ExpenseCategoryRule(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     keyword = models.CharField(max_length=255)
     category = models.ForeignKey(ExpenseCategory, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.category} - {self.keyword}"
+
+class IncomeCategoryRule(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    keyword = models.CharField(max_length=255)
+    category = models.ForeignKey(IncomeCategory, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.category} - {self.keyword}"
+
+
 
 class Account(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

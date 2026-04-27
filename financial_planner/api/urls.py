@@ -8,9 +8,12 @@ urlpatterns = [
     path('logout/', LogoutUser.as_view()),
     path('check-auth/', CheckAuth.as_view()),
     path('expense/', Expenses.as_view()),
+    path('income/', Incomes.as_view()),
     path('expense-category/', ExpenseCategories.as_view()),
+    path('income-category/', IncomeCategories.as_view()),
     path('asset/', Assets.as_view()),
     path('liability/', Liabilities.as_view()),
     path('upload-files/', ImportExpenses.as_view()),
     path('get-grouped-expenses/', GetGroupedExpenses.as_view()),
+    path('get-grouped-incomes/', GetGroupedIncomes.as_view()),
 ]

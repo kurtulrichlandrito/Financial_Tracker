@@ -6,6 +6,7 @@ from .serializers import *
 from django.contrib.auth import authenticate, login, logout
 from .utils.data_extraction import data_extractor
 from .utils.group_by_description import get_or_create_group
+from .utils.categorizer import get_model_and_serializer
 
 # Create your views here.
 class CreateUser(APIView):
@@ -105,7 +106,7 @@ class Expenses(APIView):
             expense = Expense.objects.filter(id__in=expense_ids)
             expense.update(
                 expense_category=category_id)
-            CategoryRule.objects.get_or_create(
+            ExpenseCategoryRule.objects.get_or_create(
                 category=category_id,
                 user=user,
                 keyword=expense.first().expense_notes
@@ -114,7 +115,107 @@ class Expenses(APIView):
         return Response(
             {'Message': 'Categories updated'}, 
             status=status.HTTP_200_OK)
-           
+
+class Incomes(APIView):
+    serializer_class = IncomeSerializer
+    def post(self, request, format=None):
+        serializer = IncomeSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+            {'Message': 'Invalid Request'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        if not self.request.user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+        return Response(
+            {'Message': 'Added Income'}, 
+            status=status.HTTP_200_OK)
+    
+    def get(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        incomes = Income.objects.all().filter(user=user)
+        serializer = IncomeSerializer(incomes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def patch(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'Unauthorized'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        data = self.request.data
+        for item in data:
+            category = item.get('category')
+            category_id = IncomeCategory.objects.get(income_category=category, 
+                                                      user=self.request.user)
+            income_ids = item.get('incomeIds')
+            income = Income.objects.filter(id__in=income_ids)
+            income.update(
+                income_category=category_id)
+            IncomeCategoryRule.objects.get_or_create(
+                category=category_id,
+                user=user,
+                keyword=income.first().income_notes
+            )
+            
+        return Response(
+            {'Message': 'Categories updated'}, 
+            status=status.HTTP_200_OK)
+
+class IncomeCategories(APIView):
+    serializer_class = IncomeCategorySerializer
+    def post(self, request, format=None):
+        serializer = IncomeCategorySerializer(data=request.data)
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        print(serializer)
+        if not serializer.is_valid():
+            
+            return Response(
+            {'Message': 'Invalid Request'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+            
+        income_category = request.data.get('income_category')
+        exists = IncomeCategory.objects.filter(
+            user=request.user, 
+            income_category=income_category).exists()
+        
+        if exists:
+            return Response(
+            {'Message': 'Category Already Exists'}, 
+                        status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save(user=user)
+        return Response(
+            {'Message': 'Added Income Category'}, 
+            status=status.HTTP_200_OK)
+    
+    def get(self, request, format=None):
+        if not self.request.user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        categories = IncomeCategory.objects.all()
+        serializer = IncomeCategorySerializer(categories, many=True)
+        return Response(
+            serializer.data, 
+            status=status.HTTP_200_OK)
+
 class ExpenseCategories(APIView):
     serializer_class = ExpenseCategorySerializer
     def post(self, request, format=None):
@@ -124,7 +225,7 @@ class ExpenseCategories(APIView):
             return Response(
                 {'Message': 'User Not Does not Exist'}, 
                 status=status.HTTP_401_UNAUTHORIZED)
-        
+        print(serializer)
         if not serializer.is_valid():
             return Response(
             {'Message': 'Invalid Request'}, 
@@ -165,9 +266,9 @@ class ImportExpenses(APIView):
             return Response(
                 {'Message': 'User Not Does not Exist'}, 
                 status=status.HTTP_401_UNAUTHORIZED)
-        
+        account_type = self.request.data.get('account_type')
         file = self.request.FILES.get('file')
-        data = data_extractor(file)
+        data = data_extractor(file, account_type)
 
         if not data:
             return Response(
@@ -177,15 +278,12 @@ class ImportExpenses(APIView):
         has_invalid = False
         has_duplicate = False
         for transaction in data:
-            
-            serializer = ExpenseSerializer(data=transaction)
-            
+            model, serializer = get_model_and_serializer(transaction)
+            serializer = serializer(data=transaction)
             if serializer.is_valid():
-                
-                exists = Expense.objects.filter(
+                exists = model.objects.filter(
                 user=user,
-                expense_date= transaction['expense_date'],
-                expense_amount=transaction['expense_amount']
+                **transaction
                 ).exists()
                 if not exists:
                     serializer.save(user=user)
@@ -223,7 +321,7 @@ class GetGroupedExpenses(APIView):
             key = expense.expense_notes.upper().strip()
             matched_key = get_or_create_group(grouped, key)
             if matched_key not in grouped:
-                rule = CategoryRule.objects.filter(
+                rule = ExpenseCategoryRule.objects.filter(
             user=request.user,
             keyword__icontains=matched_key
             ).first()
@@ -232,6 +330,34 @@ class GetGroupedExpenses(APIView):
                     'suggested_category': rule.category.expense_category if rule else None
                 }
             grouped[matched_key]['expense'].append(ExpenseSerializer(expense).data)
+        
+        return Response(grouped, status=status.HTTP_200_OK)
+
+class GetGroupedIncomes(APIView):
+    def get(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'Unauthorized'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        incomes = Income.objects.filter(user=request.user, 
+                                          income_category=None)
+        
+        grouped = {}
+        for income in incomes:
+            key = income.income_notes.upper().strip()
+            matched_key = get_or_create_group(grouped, key)
+            if matched_key not in grouped:
+                rule = IncomeCategoryRule.objects.filter(
+            user=request.user,
+            keyword__icontains=matched_key
+            ).first()
+                grouped[matched_key] = {
+                    'income': [],
+                    'suggested_category': rule.category.income_category if rule else None
+                }
+            grouped[matched_key]['income'].append(IncomeSerializer(income).data)
         
         return Response(grouped, status=status.HTTP_200_OK)
 
