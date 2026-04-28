@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from 'react-router-dom'
 import { Link } from "react-router-dom";
+import '../global.css'
+import '../forms.css'
 
 function Login() {
     const navigate = useNavigate()
@@ -28,18 +30,24 @@ function Login() {
             .then((data) => setMessage(data.Message))
     }
     return (
-        <div>
-            <form onSubmit={handleLogin} onChange={() => setMessage('')}>
+        <div className="auth-page">
+            <div className="card auth-card">
                 <h1>Plan your Nonexistent Money</h1>
-                <p>Username</p>
-                <input type="text" onChange={(e) => setUsername(e.target.value)} />
-                <p>Password</p>
-                <input type="password" onChange={(e) => setPassword(e.target.value)} />
-                <br />
-                {message && <p> {message}</p>}
-                <button type="submit">Login</button>
-                <p>Don't have an account? <Link to="/register">Signup</Link></p>
-            </form>
+                <form onSubmit={handleLogin} onChange={() => setMessage('')}>
+                    <div className="field">
+                        <p>Username</p>
+                        <input type="text" onChange={(e) => setUsername(e.target.value)} required />
+                    </div>
+                    <div className="field">
+                        <p>Password</p>
+                        <input type="password" onChange={(e) => setPassword(e.target.value)} required /></div>
+
+                    {message && <p className="msg msg-error"> {message}</p>}
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Login</button>
+                    <p className="auth-footer">Don't have an account? <Link to="/register">Signup</Link></p>
+                </form>
+            </div>
+
         </div>
     )
 

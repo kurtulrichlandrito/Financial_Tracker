@@ -13,19 +13,20 @@ function CreateLiability() {
             .catch()
     }
     return (
-        <div>
+        <div className="liability-page">
             <h1>Add A Liability</h1>
+            <p>Liability Name</p>
             <input type="text" onChange={(e) => {
                 setLiabilityName(e.target.value)
                 setMessage('')
             }} />
-            <p>Liability Name</p>
+            <p>Liability Amount</p>
             <input type="text" onChange={(e) => {
                 setLiabilityAmount(e.target.value)
                 setMessage('')
             }} />
-            <p>Liability Amount</p>
-            <button onClick={handleAddButton}>Add</button>
+
+            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>Add</button>
             {message && <p>{message}: {liability_name} - {liability_amount}</p>}
         </div>
     )

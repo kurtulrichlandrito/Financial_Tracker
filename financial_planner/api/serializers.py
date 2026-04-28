@@ -87,3 +87,15 @@ class LiabilitySerializer(ModelSerializer):
         model = Liability
         fields = ('user', 'id', 'liability_name', 'liability_amount')
         read_only_fields = ('user',)
+
+class AccountSerializer(ModelSerializer):
+    
+    class Meta:
+        model = Account
+        fields = ('user', 
+                  'id',
+                   'account_type',
+                   'date_added',
+                   'balance',
+                   'account_nickname')
+        read_only_fields = ('user', 'date_added')

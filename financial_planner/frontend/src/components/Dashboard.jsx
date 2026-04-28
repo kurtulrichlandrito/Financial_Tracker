@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CreateExpenseCategory from "./categories/CreateExpenseCategory"
 import Dialog from '@mui/material/Dialog'
 import apiPost from '../utils/api'
-import CreateIncomeCategory from "./categories/CreateIncomeCategory";
+import CreateTransactionCategory from "./categories/CreateTransactionCategory";
 import UploadFiles from "./statements/UploadStatements";
 import CreateAsset from "./asset/CreateAsset";
 import CreateLiability from "./liabilities/CreateLiability";
@@ -11,90 +10,91 @@ import ExpenseList from "./expenses/ExpenseList";
 import AssetList from "./asset/AssetList"
 import LiabilityList from "./liabilities/LiabilityList";
 import IncomeList from "./income/IncomeList";
-import CreateTransactionCategory from "./categories/CreateExpenseCategory";
-import ExpenseChart from "./charts/ExpenseChart";
+import Charts from "./charts/Charts";
+import CreateAccount from "./accounts/CreateAccount";
+import './global.css'
+import './Dashboard.css'
+
+const ACTIONS = [
+    { key: 'expense', label: 'Expense Category', icon: '🏷️' },
+    { key: 'income', label: 'Income Category', icon: '💰' },
+    { key: 'upload', label: 'Upload Statement', icon: '📤' },
+    { key: 'asset', label: 'Add Asset', icon: '📈' },
+    { key: 'liability', label: 'Add Liability', icon: '📉' },
+    { key: 'account', label: 'Add Account', icon: '🏦' },
+]
 
 function Dashboard() {
-    const [isExpenseOpen, setExpenseIsOpen] = useState(false)
-    const [isIncomeOpen, setIncomeIsOpen] = useState(false)
-    const [isUploadOpen, setUploadIsOpen] = useState(false)
-    const [isAssetOpen, setAssetIsOpen] = useState(false)
-    const [isLiabilityOpen, setLiabilityIsOpen] = useState(false)
-    const [refresh, setRefresh] = useState(false)
+    const [open, setOpen] = useState({})
+    const [globalRefresh, setGlobalRefresh] = useState(false)
     const navigate = useNavigate()
 
+    const toggle = (component, state) => setOpen(open => ({ ...open, [component]: state }))
 
     const Logout = () => {
         apiPost('/api/logout/')
-            .then(response => response.json())
-            .then(data => {
-                if (data.Message === 'Logout Successful') {
-                    navigate('/login')
-                }
-            })
+            .then(r => r.json())
+            .then(d => { if (d.Message === 'Logout Successful') navigate('/login') })
     }
+    const reload = () => {
+        setGlobalRefresh(!globalRefresh)
+    }
+
     return (
-        <div>
-            <h1>THIS IS THE DASHBOARD</h1>
-            <div>
-                <h2>Account Overview</h2>
-                <ExpenseChart type="expense" />
-                <ExpenseChart type="income" />
+        <div id="dashboard">
+            <div className="dashboard-header">
+                <h1>Dashboard</h1>
+                <button className="btn btn-ghost" onClick={Logout}>Logout</button>
             </div>
 
-            <div>
-                <h2>Monthly Overview</h2>
+            <div className="dashboard-charts">
+                <div className="card"><Charts type="expense" globalRefresh={globalRefresh} /></div>
+                <div className="card"><Charts type="income" globalRefresh={globalRefresh} /></div>
             </div>
-            <div>
-                <h2>Details Window</h2>
-                <h3>Add Categories</h3>
-                <button onClick={() => setExpenseIsOpen(true)}>Expense Category</button>
-                <Dialog open={isExpenseOpen} onClose={() => setExpenseIsOpen(false)}>
-                    <CreateTransactionCategory type="expense" />
-                </Dialog>
-                <p>Add Expense Category</p>
-                <button onClick={() => setIncomeIsOpen(true)}>Income Category</button>
-                <Dialog open={isIncomeOpen} onClose={() => setIncomeIsOpen(false)}>
-                    <CreateTransactionCategory type="income" />
-                </Dialog>
-                <p>Add Income Category</p>
-                <button onClick={() => setUploadIsOpen(true)}>Upload</button>
-                <Dialog open={isUploadOpen} onClose={() => setUploadIsOpen(false)}>
-                    <UploadFiles onSubmit={() => setRefresh(!refresh)} refresh={refresh} />
-                </Dialog>
-                <p>Add Bank Statements</p>
-                <button onClick={() => setAssetIsOpen(true)}>Asset</button>
-                <Dialog open={isAssetOpen} onClose={() => setAssetIsOpen(false)}>
-                    <CreateAsset />
-                </Dialog>
-                <p>Add Asset</p>
-                <button onClick={() => setLiabilityIsOpen(true)}>Liability</button>
-                <Dialog open={isLiabilityOpen} onClose={() => setLiabilityIsOpen(false)}>
-                    <CreateLiability />
-                </Dialog>
-                <p>Add Liability</p>
 
+            <h2>Quick Actions</h2>
+            <div className="dashboard-actions">
+                {ACTIONS.map(({ key, label, icon }) => (
+                    <button key={key} className="action-card" onClick={() => toggle(key, true)}>
+                        <span>{icon}</span>{label}
+                    </button>
+                ))}
             </div>
-            <button onClick={Logout}>Logout</button>
-            <div>
-                <h2>Temporary Expense Table</h2>
-                <ExpenseList refresh={refresh} />
-            </div>
-            <div>
-                <h2>Temporary Income Table</h2>
-                <IncomeList refresh={refresh} />
-            </div>
-            <div>
-                <h2>Temporary Asset</h2>
-                <AssetList refresh={refresh} />
-            </div>
-            <div>
-                <h2>Temporary Liability</h2>
-                <LiabilityList refresh={refresh} />
+
+            <Dialog open={!!open.expense} onClose={() => toggle('expense', false)}>
+                <CreateTransactionCategory type="expense" onRefresh={reload} />
+            </Dialog>
+            <Dialog open={!!open.income} onClose={() => toggle('income', false)}>
+                <CreateTransactionCategory type="income" globalRefresh={globalRefresh} onRefresh={reload} />
+            </Dialog>
+            <Dialog open={!!open.upload} onClose={() => toggle('upload', false)}>
+                <UploadFiles onRefresh={reload} />
+            </Dialog>
+            <Dialog open={!!open.asset} onClose={() => toggle('asset', false)}>
+                <CreateAsset />
+            </Dialog>
+            <Dialog open={!!open.liability} onClose={() => toggle('liability', false)}>
+                <CreateLiability />
+            </Dialog>
+            <Dialog open={!!open.account} onClose={() => toggle('account', false)}>
+                <CreateAccount />
+            </Dialog>
+
+            <div className="dashboard-tables">
+                <div className="card">
+                    <ExpenseList globalRefresh={globalRefresh} onRefresh={reload} />
+                </div>
+                <div className="card"><IncomeList globalRefresh={globalRefresh} onRefresh={reload} />
+                </div>
+                <div className="card">
+                    <AssetList globalRefresh={globalRefresh} />
+                </div>
+                <div className="card">
+                    <LiabilityList globalRefresh={globalRefresh} onRefresh={reload} />
+                </div>
             </div>
         </div>
     )
-
 }
 
 export default Dashboard

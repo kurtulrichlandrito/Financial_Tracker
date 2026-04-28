@@ -13,19 +13,21 @@ function CreateAsset() {
             .catch()
     }
     return (
-        <div>
+        <div className="asset-page">
             <h1>Add An Asset</h1>
+            <p>Asset Name</p>
             <input type="text" onChange={(e) => {
                 setAssetName(e.target.value)
                 setMessage('')
             }} />
-            <p>Asset Name</p>
+
+            <p>Asset Amount</p>
             <input type="text" onChange={(e) => {
                 setAssetAmount(e.target.value)
                 setMessage('')
             }} />
-            <p>Asset Amount</p>
-            <button onClick={handleAddButton}>Add</button>
+
+            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>Add</button>
             {message && <p>{message}: {asset_name} - {asset_amount}</p>}
         </div>
     )

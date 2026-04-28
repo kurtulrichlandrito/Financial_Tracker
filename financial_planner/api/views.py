@@ -7,6 +7,9 @@ from django.contrib.auth import authenticate, login, logout
 from .utils.data_extraction import data_extractor
 from .utils.group_by_description import get_or_create_group
 from .utils.categorizer import get_model_and_serializer
+import json
+from decimal import Decimal
+from django.db.models import F
 
 # Create your views here.
 class CreateUser(APIView):
@@ -115,6 +118,22 @@ class Expenses(APIView):
         return Response(
             {'Message': 'Categories updated'}, 
             status=status.HTTP_200_OK)
+    
+    def delete(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'Unauthorized'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        items = self.request.data.get('items')
+
+        for item in items:
+            Expense.objects.all().filter(user=user,
+                                                id=item).delete()
+            
+        return Response(
+        {'Message': 'Items deleted'}, 
+        status=status.HTTP_200_OK)
 
 class Incomes(APIView):
     serializer_class = IncomeSerializer
@@ -172,6 +191,22 @@ class Incomes(APIView):
         return Response(
             {'Message': 'Categories updated'}, 
             status=status.HTTP_200_OK)
+
+    def delete(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'Unauthorized'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        items = self.request.data.get('items')
+
+        for item in items:
+            Income.objects.all().filter(user=user,
+                                                id=item).delete()
+            
+        return Response(
+        {'Message': 'Items deleted'}, 
+        status=status.HTTP_200_OK)
 
 class IncomeCategories(APIView):
     serializer_class = IncomeCategorySerializer
@@ -266,9 +301,16 @@ class ImportExpenses(APIView):
             return Response(
                 {'Message': 'User Not Does not Exist'}, 
                 status=status.HTTP_401_UNAUTHORIZED)
-        account_type = self.request.data.get('account_type')
+        account = json.loads(request.data.get('account'))
+        account_serializer = AccountSerializer(data=account)
+        
+        if not account_serializer.is_valid():
+            return Response(
+                {'Message': 'Account is not valid'}, 
+                status=status.HTTP_400_BAD_REQUEST) 
+        
         file = self.request.FILES.get('file')
-        data = data_extractor(file, account_type)
+        data = data_extractor(file, account['account_type'])
 
         if not data:
             return Response(
@@ -280,23 +322,32 @@ class ImportExpenses(APIView):
         for transaction in data:
             model, serializer = get_model_and_serializer(transaction)
             serializer = serializer(data=transaction)
-            if serializer.is_valid():
-                exists = model.objects.filter(
-                user=user,
-                **transaction
-                ).exists()
-                if not exists:
-                    serializer.save(user=user)
-                else:
-                    has_duplicate = True
-            else:
+            if not serializer.is_valid():
                 has_invalid = True
+                continue
 
+            exists = model.objects.filter(
+            user=user,
+            **transaction
+            ).exists()
+            if exists:
+                has_duplicate = True
+                continue
+        
+            amount = transaction.get('expense_amount'
+                ) or transaction.get('income_amount')
+
+            Account.objects.filter(id=account.get('id')).update(
+                balance = F('balance') + Decimal(amount))
+
+            serializer.save(user=user)
+                
         if has_invalid:
             return Response(
                 {'Message': 'Some transactions have invalid fields'}, 
                 status=status.HTTP_400_BAD_REQUEST)
         elif has_duplicate:
+            print('duplicate: ',transaction)
             return Response(
                 {'Message': 'Some Transactions Already Exists'}, 
                 status=status.HTTP_200_OK)
@@ -423,4 +474,44 @@ class Liabilities(APIView):
             status=status.HTTP_200_OK)
 
 class Accounts(APIView):
-    pass
+    serializer_class = AccountSerializer
+    def post(self, request, format=None):
+        serializer = AccountSerializer(data=request.data)
+        user=self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        if not serializer.is_valid():
+            print(serializer.data)
+            return Response(
+            {'Message': 'Invalid Request'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        exists = Account.objects.filter(
+                user=user,
+                account_type=request.data.get('account_type'),
+                account_nickname=request.data.get('account_nickname')
+                ).exists()
+        
+        if exists:
+            return Response(
+            {'Message': 'Account Already Exists'}, 
+                        status=status.HTTP_400_BAD_REQUEST)
+        serializer.save(user=user)
+        return Response(
+            {'Message': 'Added Account'}, 
+            status=status.HTTP_200_OK)
+        
+    def get(self, request, format=None):
+        if not self.request.user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        accounts = Account.objects.all()
+        serializer = AccountSerializer(accounts, many=True)
+        return Response(
+            serializer.data, 
+            status=status.HTTP_200_OK)

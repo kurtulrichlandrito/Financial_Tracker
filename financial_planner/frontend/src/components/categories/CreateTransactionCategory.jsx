@@ -1,38 +1,41 @@
 import { useState, useEffect, Fragment } from "react"
 import { apiPost, apiPatch } from '../../utils/api'
-
-function CreateIncomeCategory(props) {
-    const [Income_category, setIncomeCategory] = useState('')
+import '../global.css'
+import '../categories.css'
+function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
+    const [expense_category, setExpenseCategory] = useState('')
     const [message, setMessage] = useState('')
-    const [Income_categories, setIncomeCategories] = useState([])
-    const [Incomes, setIncomes] = useState([])
-    const [groupedIncomes, setGroupIncomeCategory] = useState({})
+    const [expense_categories, setExpenseCategories] = useState([])
+    const [expenses, setExpenses] = useState([])
+    const [groupedExpenses, setGroupExpenseCategory] = useState({})
     const [expandedRow, setExpandedRow] = useState(null)
-    const [categorizedIncome, setCategorizedIncome] = useState({})
+    const [categorizedExpense, setCategorizedExpense] = useState({})
     const [submitMessage, setSubmitMessage] = useState('')
     const [refresh, setRefresh] = useState(false)
     const [addedCategory, setAddedCategory] = useState('')
-
+    const apiBase = `/api/${type}-category/`
+    const groupedApi = `/api/get-grouped-${type}s/`
+    const updateApi = `/api/${type}/`
 
     const handleAddButton = () => {
-        apiPost('/api/Income-category/', { Income_category })
+        apiPost(apiBase, { [`${type}_category`]: expense_category })
             .then((response) => response.json())
             .then((data) => {
                 setMessage(data.Message)
-                setAddedCategory(Income_category)
-                setIncomeCategory('')
+                setAddedCategory(expense_category)
+                setExpenseCategory('')
                 getCategories()
             })
     }
 
 
     const getCategories = () => {
-        fetch('/api/Income-category/', {
+        fetch(apiBase, {
             method: 'GET',
             credentials: 'include'
         })
             .then(response => response.json())
-            .then(data => setIncomeCategories(data))
+            .then(data => setExpenseCategories(data))
     }
 
     useEffect(() => {
@@ -40,55 +43,58 @@ function CreateIncomeCategory(props) {
     }, [])
 
     useEffect(() => {
-        fetch('/api/get-grouped-Incomes/', {
+        fetch(groupedApi, {
             credentials: 'include'
         })
             .then(response => response.json())
             .then(data => {
-                setGroupIncomeCategory(data)
+                setGroupExpenseCategory(data)
                 const suggestedCategories = {}
                 Object.entries(data).forEach(([key, group]) => {
                     if (group.suggested_category) {
                         suggestedCategories[key] = group.suggested_category
                     }
                 })
-                setCategorizedIncome(suggestedCategories)
+                setCategorizedExpense(suggestedCategories)
             })
-    }, [refresh])
+    }, [globalRefresh, refresh])
 
     const handleSubmit = () => {
-        const categorizedData = Object.entries(categorizedIncome).map(([IncomeGroupKey, category]) => ({
+        const categorizedData = Object.entries(categorizedExpense).map(([expenseGroupKey, category]) => ({
             category,
-            IncomeIds: (groupedIncomes[IncomeGroupKey].Income || []).map(Income => Income.id)
+            [`${type}Ids`]: (groupedExpenses[expenseGroupKey][`${type}`] || []).map(expense => expense.id)
         }))
-        apiPatch('/api/Income/', categorizedData)
+        console.log(categorizedData)
+        apiPatch(updateApi, categorizedData)
             .then(response => response.json())
             .then((data) => {
                 setSubmitMessage(data.Message)
                 setRefresh(!refresh)
-
+                onRefresh()
             })
     }
 
     return (
-        <div>
-            <h1>Add An Expense Category</h1>
+        <div className="category-page">
+            <h1>Add An {type.toUpperCase()} Category</h1>
             <input id="input" type="text" value={expense_category} onChange={(e) => {
                 setExpenseCategory(e.target.value)
                 setMessage('')
             }} />
-            <button onClick={handleAddButton}>Add</button>
+            <button className="btn"
+                onClick={handleAddButton}
+                style={{ width: '100%', justifyContent: 'center' }}>Add</button>
             {message && <p>{message}: {addedCategory}</p>}
             <h2>Categorize Expenses</h2>
             <p>Expenses have been grouped automatically (Add choice later to separate)</p>
-            <table>
+            <table className="category-table-wrapper">
 
                 {Object.entries(groupedExpenses).map(([key, expenseGroup]) => (
                     <tbody key={key}>
-                        <tr key={key} onClick={() => setExpandedRow(expandedRow === key ? null : key)}>
-                            <td>{expandedRow === key ? '▼' : '▶'}</td>
+                        <tr key={key} onClick={() => setExpandedRow(expandedRow === key ? null : key)} className="expandable-row">
+                            <td className="expand-icon">{expandedRow === key ? '▼' : '▶'}</td>
                             <td>{key}</td>
-                            <td>{expenseGroup.expense.length} transactions</td>
+                            <td>{expenseGroup[`${type}`].length} transactions</td>
                             <td>
                                 <select onClick={(e) => e.stopPropagation()} onChange={(e) => {
                                     setCategorizedExpense({
@@ -103,18 +109,18 @@ function CreateIncomeCategory(props) {
                                     {expense_categories.map((category) => (
                                         <option
                                             key={category.id}
-                                            value={category.expense_category}>
-                                            {category.expense_category}
+                                            value={category[`${type}_category`]}>
+                                            {category[`${type}_category`]}
                                         </option>
                                     ))}
                                 </select>
                             </td>
                         </tr>
-                        {expandedRow === key && expenseGroup.expense.map((expense) => (
+                        {expandedRow === key && expenseGroup[`${type}`].map((expense) => (
                             <tr key={expense.id}>
                                 <td></td>
-                                <td>{expense.expense_date}</td>
-                                <td>{expense.expense_amount}</td>
+                                <td>{expense[`${type}_date`]}</td>
+                                <td>{expense[`${type}_amount`]}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -124,7 +130,9 @@ function CreateIncomeCategory(props) {
             {Object.keys(groupedExpenses).length > 0 ? (
                 <>
                     {submitMessage && <p>{submitMessage}</p>}
-                    <button onClick={handleSubmit}>Submit</button>
+                    <button className="btn btn-primary"
+                        style={{ width: '100%', justifyContent: 'center' }}
+                        onClick={() => { handleSubmit(); }}>Submit</button>
                 </>
             ) : (
                 <p>All expenses are categorized!</p>
@@ -134,4 +142,4 @@ function CreateIncomeCategory(props) {
 }
 
 
-export default CreateIncomeCategory
+export default CreateTransactionCategory

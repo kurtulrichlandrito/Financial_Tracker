@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { PieChart } from '@mui/x-charts/PieChart';
 
-function ExpenseChart({ type }) {
+function Charts({ type, globalRefresh }) {
     const [expenseData, setExpenseData] = useState({})
     const [expenseCategories, setExpenseCategories] = useState({})
 
@@ -12,7 +12,7 @@ function ExpenseChart({ type }) {
         })
             .then(response => response.json())
             .then(data => setExpenseData(data))
-    }, [])
+    }, [globalRefresh])
     useEffect(() => {
         fetch(`/api/${type}-category/`, {
             method: 'GET',
@@ -20,7 +20,7 @@ function ExpenseChart({ type }) {
         })
             .then(response => response.json())
             .then(data => { setExpenseCategories(data) })
-    }, [])
+    }, [globalRefresh])
     const processData = () => {
         const categories = Object.values(expenseCategories).map(category => category[`${type}_category`])
         const getColors = (count) => {
@@ -34,23 +34,27 @@ function ExpenseChart({ type }) {
         const colors = getColors(categories.length)
         const categoryColors = categories.map((category, index) => { category: colors[index] })
         const totalExpense = Object.values(expenseData).reduce((total, expense) => total + -parseFloat(expense[`${type}_amount`]), 0)
-        const data = categories.map((category) => {
+        const data = categories.flatMap((category) => {
             const categoryTotalAmount = Object.values(expenseData)
                 .filter((expense) => expense[`${type}_category`] === category)
-                .reduce((total, expense) => total + parseFloat(expense[`${type}_amount`]), 0)
-            return {
-                id: category,
-                label: `Category: ${category}`,
-                value: categoryTotalAmount,
-                percentage: (categoryTotalAmount / totalExpense) * 100,
-                color: categoryColors[category]
+                .reduce((total, expense) => total + parseFloat(expense[`${type}_amount`]), 0);
+            if (categoryTotalAmount > 0) {
+                return {
+                    id: category,
+                    label: `${category}`,
+                    value: categoryTotalAmount,
+                    percentage: (categoryTotalAmount / totalExpense) * 100,
+                    color: categoryColors[category]
+                }
             }
+
         })
-        return data
+        return data.filter(Boolean)
     }
 
     return (
-        <div style={{ height: '500px', width: '500px' }}>
+        <div style={{ height: '300px', width: 'auto' }}>
+            <h2>{type.toUpperCase()}</h2>
             <PieChart
                 series={[
                     {
@@ -66,10 +70,9 @@ function ExpenseChart({ type }) {
 
                     }
                 ]}
-
             />
         </div>
     )
 }
 
-export default ExpenseChart
+export default Charts

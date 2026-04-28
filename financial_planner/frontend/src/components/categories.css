@@ -1,0 +1,65 @@
+/* Category pages */
+.category-page,
+.account-page,
+.asset-page,
+.liability-page {
+  padding: 1.5rem;
+  min-width: 500px;
+}
+
+
+.category-table-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 1rem;
+}
+
+/* Expandable row */
+.expandable-row {
+  cursor: pointer;
+}
+
+.expandable-row:hover {
+  background: #f0f4ff;
+}
+
+.expand-icon {
+  color: var(--muted);
+  width: 24px;
+}
+
+.sub-row td {
+  background: #fafbff;
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+.category-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Upload dialog */
+.upload-page {
+  padding: 1.5rem;
+  min-width: 420px;
+}
+
+.upload-note {
+  font-size: .8rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.upload-actions {
+  display: flex;
+  gap: .75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
