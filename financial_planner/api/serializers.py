@@ -118,7 +118,7 @@ class NetWorthSerializer(serializers.Serializer):
 
 class TransactionSerializer(ModelSerializer):
     transaction_category = serializers.CharField(
-            source='expense_category.expense_category', 
+            source='transaction_category.transaction_category', 
             read_only=True
         )
     account_id = serializers.PrimaryKeyRelatedField(
@@ -129,6 +129,7 @@ class TransactionSerializer(ModelSerializer):
     class Meta:
         model = Transaction
         fields = ('user',
+                  'id',
                   'transaction_date',
                   'transaction_category',
                   'transaction_amount',

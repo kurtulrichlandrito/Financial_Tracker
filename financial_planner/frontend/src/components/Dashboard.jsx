@@ -61,10 +61,10 @@ function Dashboard() {
                 <button className="btn btn-ghost" onClick={Logout}>Logout</button>
             </div>
 
-            <div className="dashboard-charts">
+            {/* <div className="dashboard-charts">
                 <div className="card"><Charts type="expense" globalRefresh={globalRefresh} /></div>
                 <div className="card"><Charts type="income" globalRefresh={globalRefresh} /></div>
-            </div>
+            </div> */}
 
             <h2>Quick Actions</h2>
             <div className="dashboard-actions">
@@ -134,7 +134,7 @@ function Dashboard() {
             </div>
             <div>
                 <h2>Search</h2>
-                <SearchTransactions />
+                {/* <SearchTransactions /> */}
 
             </div>
         </div>
