@@ -134,7 +134,7 @@ function Dashboard() {
             </div>
             <div>
                 <h2>Search</h2>
-                {/* <SearchTransactions /> */}
+                <SearchTransactions />
 
             </div>
         </div>

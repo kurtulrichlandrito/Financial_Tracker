@@ -64,96 +64,6 @@ class CheckAuth(APIView):
             
         return Response({'isAuthenticated': False})
 
-class GetGroupedTransactions(APIView):
-    def get(self, request, format=None):
-        transaction_type = request.GET.get('type')
-        user = self.request.user
-        if not user.is_authenticated:
-            return Response(
-                {'Message': 'Unauthorized'}, 
-                status=status.HTTP_401_UNAUTHORIZED)
-        
-        transactions = Transaction.objects.all().filter(user=request.user, 
-                                               transaction_category=None, 
-                                               transaction_type=transaction_type)
-        grouped = {}
-        for transaction in transactions:
-            key = transaction.transaction_notes.upper().strip()
-            matched_key = get_or_create_group(grouped, key)
-            if matched_key not in grouped:
-                rule = CategoryRule.objects.filter(
-            user=request.user,
-            keyword__icontains=matched_key
-            ).first()
-                grouped[matched_key] = {
-                    'transaction': [],
-                    'suggested_category': rule.category.transaction_category if rule else None
-                }
-            grouped[matched_key]['transaction'].append(TransactionSerializer(transaction).data)
-        
-        return Response(grouped, status=status.HTTP_200_OK)
-
-class Assets(APIView):
-    serializer_class = AssetSerializer
-    def post(self, request, format=None):
-        serializer = AssetSerializer(data=request.data)
-        user = self.request.user
-        if not user.is_authenticated:
-            return Response(
-                {'Message': 'User Not Does not Exist'}, 
-                status=status.HTTP_400_BAD_REQUEST)
-        
-        if not serializer.is_valid():
-            return Response(
-            {'Message': 'Invalid Request'}, 
-            status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer.save(user=user)
-        return Response(
-            {'Message': 'Added Asset'}, 
-            status=status.HTTP_200_OK)
-
-    def get(self, request, format=None):
-        if not self.request.user.is_authenticated:
-            return Response(
-            {'Message': 'User Not Does not Exist'}, 
-            status=status.HTTP_400_BAD_REQUEST)
-        
-        asset = Asset.objects.all()
-        serializer = AssetSerializer(asset, many=True)
-        return Response(
-            serializer.data, 
-            status=status.HTTP_200_OK)        
-                
-class Liabilities(APIView):
-    serializer_class = LiabilitySerializer
-    def post(self, request, format=None):
-        serializer = LiabilitySerializer(data=request.data)
-        user = self.request.user
-        if not user.is_authenticated:
-            return Response(
-                {'Message': 'User Not Does not Exist'}, 
-                status=status.HTTP_401_UNAUTHORIZED)
-        
-        if serializer.is_valid():
-            
-            serializer.save(user=user)
-            return Response(
-                {'Message': 'Added Liability'}, 
-                status=status.HTTP_200_OK)
-    
-    def get(self, request, format=None):
-        if not self.request.user.is_authenticated:
-            return Response(
-            {'Message': 'User Not Does not Exist'}, 
-            status=status.HTTP_400_BAD_REQUEST)
-        
-        liability = Liability.objects.all()
-        serializer = LiabilitySerializer(liability, many=True)
-        return Response(
-            serializer.data, 
-            status=status.HTTP_200_OK)
-
 class Accounts(APIView):
     serializer_class = AccountSerializer
     def post(self, request, format=None):
@@ -218,112 +128,6 @@ class Accounts(APIView):
             serializer.data, 
             status=status.HTTP_200_OK)
 
-class NetWorth(APIView):
-    def get(self, request,format=None):
-
-        user=self.request.user
-        if not user.is_authenticated:
-            return Response(
-                {'Message': 'User Not Does not Exist'}, 
-                status=status.HTTP_401_UNAUTHORIZED)
-        
-        total_asset = sum(asset['asset_amount'] 
-                          for asset in Asset.objects.values())
-        total_liabilities = sum(liability['liability_amount'] 
-                              for liability in Liability.objects.values())
-        
-        net_worth = total_asset - total_liabilities
-
-        data = {
-            'total_assets' : total_asset,
-            'total_liabilities' : total_liabilities,
-            'net_worth' : net_worth
-        }
-
-        serializer = NetWorthSerializer(data)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-class Search(APIView):
-    
-    def get(self, request, format=None):
-        user=self.request.user
-        if not user.is_authenticated:
-            return Response(
-                {'Message': 'User Not Does not Exist'}, 
-                status=status.HTTP_401_UNAUTHORIZED)
-        
-        search_value = self.request.GET.get("search_value")
-        account_id = self.request.GET.get("account_id")
-        category_id = self.request.GET.get("category")
-        type = self.request.GET.get("type")
-        date_start = self.request.GET.get("date_start")
-
-        search_value = search_value.strip() if search_value else None
-        account_id = None if account_id in [None, "", "all"] else account_id
-        category_id = None if category_id in [None, "", "all"] else category_id
-        type = None if type in [None, "", "all"] else type
-        date_start = None if date_start in [None, "", "all"] else date_start  
-
-        income_qs = Income.objects.all()
-        expense_qs = Expense.objects.all()
-        if account_id:
-            income_qs = income_qs.filter(user=user, account_id=account_id)
-            expense_qs = expense_qs.filter(user=user, account_id=account_id)
-        
-        if type == "income":
-            expense_qs = expense_qs.none()
-        elif type == "expense":
-            income_qs = income_qs.none()
-
-        if search_value:
-            income_qs = income_qs.filter(
-                Q(income_notes__icontains=search_value), 
-                user=user
-            )
-
-            expense_qs = expense_qs.filter(
-                Q(expense_notes__icontains=search_value),
-                user=user
-            )
-        
-        if date_start:
-            income_qs = income_qs.filter(user=user, income_date__gte=date_start)
-            expense_qs = expense_qs.filter(user=user, expense_date__gte=date_start)
-        
-        data = (ExpenseSerializer(expense_qs, many=True).data + 
-                IncomeSerializer(income_qs, many=True).data)
-        
-        return Response(data, status=status.HTTP_200_OK) 
-
-class BatchCategorizeTransactions(APIView):
-    def patch(self, request, format=None):
-            user = self.request.user
-            if not user.is_authenticated:
-                return Response(
-                    {'Message': 'Unauthorized'}, 
-                    status=status.HTTP_401_UNAUTHORIZED)
-            
-            data = self.request.data
-            for item in data:
-                category = item.get('category')
-                category_id = Category.objects.get(transaction_category=category, 
-                                                        user=self.request.user)
-                transaction_ids = item.get('transaction_Ids')
-                transaction = Transaction.objects.all().filter(id__in=transaction_ids)
-                transaction.update(
-                    transaction_category=category_id)
-                
-                CategoryRule.objects.get_or_create(
-                    transaction_category=category_id,
-                    user=user,
-                    keyword=transaction.first().transaction_notes
-                )
-                
-            return Response(
-                {'Message': 'Categories updated'}, 
-                status=status.HTTP_200_OK)
-    
 class Transactions(APIView):
     def post(self, request, format=None):
         user = self.request.user
@@ -353,8 +157,10 @@ class Transactions(APIView):
         
         transaction_type = request.GET.get('type')
 
-        transactions = Transaction.objects.all().filter(user=user, 
-                                transaction_type=transaction_type)
+        transactions = Transaction.objects.all().filter(user=user)
+
+        if transaction_type != 'all':
+            transactions = transactions.filter(transaction_type=transaction_type)
         
         serializer = TransactionSerializer(transactions, many=True)
         return Response(
@@ -459,11 +265,197 @@ class Categories(APIView):
             {'Message': 'User Not Does not Exist'}, 
             status=status.HTTP_400_BAD_REQUEST)
         type = request.GET.get('type')
-        categories = Category.objects.all().filter(user=user,
-                                                   transaction_type=type)
+        categories = Category.objects.all().filter(user=user)
+
+        if type:
+            categories.filter(transaction_type=type)
+
         serializer = CategorySerializer(categories, many=True)
         
         return Response(
             serializer.data, 
             status=status.HTTP_200_OK)
 
+class GetGroupedTransactions(APIView):
+    def get(self, request, format=None):
+        transaction_type = request.GET.get('type')
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'Unauthorized'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        transactions = Transaction.objects.all().filter(user=request.user, 
+                                               transaction_category=None, 
+                                               transaction_type=transaction_type)
+        grouped = {}
+        for transaction in transactions:
+            key = transaction.transaction_notes.upper().strip()
+            matched_key = get_or_create_group(grouped, key)
+            if matched_key not in grouped:
+                rule = CategoryRule.objects.filter(
+            user=request.user,
+            keyword__icontains=matched_key
+            ).first()
+                grouped[matched_key] = {
+                    'transaction': [],
+                    'suggested_category': rule.category.transaction_category if rule else None
+                }
+            grouped[matched_key]['transaction'].append(TransactionSerializer(transaction).data)
+        
+        return Response(grouped, status=status.HTTP_200_OK)
+
+class BatchCategorizeTransactions(APIView):
+    def patch(self, request, format=None):
+            user = self.request.user
+            if not user.is_authenticated:
+                return Response(
+                    {'Message': 'Unauthorized'}, 
+                    status=status.HTTP_401_UNAUTHORIZED)
+            
+            data = self.request.data
+            for item in data:
+                category = item.get('category')
+                category_id = Category.objects.get(transaction_category=category, 
+                                                        user=self.request.user)
+                transaction_ids = item.get('transaction_Ids')
+                transaction = Transaction.objects.all().filter(id__in=transaction_ids)
+                transaction.update(
+                    transaction_category=category_id)
+                
+                CategoryRule.objects.get_or_create(
+                    transaction_category=category_id,
+                    user=user,
+                    keyword=transaction.first().transaction_notes
+                )
+                
+            return Response(
+                {'Message': 'Categories updated'}, 
+                status=status.HTTP_200_OK)
+
+class Assets(APIView):
+    serializer_class = AssetSerializer
+    def post(self, request, format=None):
+        serializer = AssetSerializer(data=request.data)
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_400_BAD_REQUEST)
+        
+        if not serializer.is_valid():
+            return Response(
+            {'Message': 'Invalid Request'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save(user=user)
+        return Response(
+            {'Message': 'Added Asset'}, 
+            status=status.HTTP_200_OK)
+
+    def get(self, request, format=None):
+        if not self.request.user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        asset = Asset.objects.all()
+        serializer = AssetSerializer(asset, many=True)
+        return Response(
+            serializer.data, 
+            status=status.HTTP_200_OK)        
+                
+class Liabilities(APIView):
+    serializer_class = LiabilitySerializer
+    def post(self, request, format=None):
+        serializer = LiabilitySerializer(data=request.data)
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        if serializer.is_valid():
+            
+            serializer.save(user=user)
+            return Response(
+                {'Message': 'Added Liability'}, 
+                status=status.HTTP_200_OK)
+    
+    def get(self, request, format=None):
+        if not self.request.user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        liability = Liability.objects.all()
+        serializer = LiabilitySerializer(liability, many=True)
+        return Response(
+            serializer.data, 
+            status=status.HTTP_200_OK)
+
+class NetWorth(APIView):
+    def get(self, request,format=None):
+
+        user=self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        total_asset = sum(asset['asset_amount'] 
+                          for asset in Asset.objects.values())
+        total_liabilities = sum(liability['liability_amount'] 
+                              for liability in Liability.objects.values())
+        
+        net_worth = total_asset - total_liabilities
+
+        data = {
+            'total_assets' : total_asset,
+            'total_liabilities' : total_liabilities,
+            'net_worth' : net_worth
+        }
+
+        serializer = NetWorthSerializer(data)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class Search(APIView):
+    
+    def get(self, request, format=None):
+        user=self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        search_value = self.request.GET.get("search_value")
+        account_id = self.request.GET.get("account_id")
+        category_id = self.request.GET.get("category")
+        type = self.request.GET.get("type")
+        date_start = self.request.GET.get("date_start")
+
+        search_value = search_value.strip() if search_value else None
+        account_id = None if account_id in [None, "", "all"] else account_id
+        category_id = None if category_id in [None, "", "all"] else category_id
+        type = None if type in [None, "", "all"] else type
+        date_start = None if date_start in [None, "", "all"] else date_start  
+
+        transactions = Transaction.objects.all().filter(user=user)
+
+        if account_id:
+            transactions = transactions.filter(account_id=account_id)
+        
+        if type:
+            transactions = transactions.filter(transaction_type=type)
+
+        if search_value:
+            transactions.filter(Q(transaction_notes__icontains=search_value))
+
+        if date_start:
+            transactions = transactions.filter(transaction_date__gte=date_start)
+
+        serializer = TransactionSerializer(transactions, many=True)
+        return Response(
+            serializer.data, 
+            status=status.HTTP_200_OK)

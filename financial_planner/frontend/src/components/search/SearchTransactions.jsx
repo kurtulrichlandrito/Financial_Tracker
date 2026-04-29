@@ -3,16 +3,15 @@ import apiPost from '../../utils/api'
 import '../categories.css'
 import getDatePresetISO from '../../utils/dateHelper'
 import '../lists.css'
+import TransactionsList from '../transactions/TransactionsList'
 
 function SearchTransactions() {
-    const [expenseCategories, setExpenseCategories] = useState([])
-    const [incomeCategories, setIncomeCategories] = useState([])
-    const [type, setType] = useState('all')
-    const [accounts, setAccounts] = useState([])
+    const [transactionCategories, setTransactionCategories] = useState([])
     const [message, setMessage] = useState('')
+    const [accounts, setAccounts] = useState([])
     const [allSelected, setAllSelected] = useState(false)
     const [selected, SetSelected] = useState([])
-    const allCategories = [...expenseCategories, ...incomeCategories]
+    const [type, setType] = useState('all')
     const [filters, setFilters] = useState({
         search_value: '',
         account_id: 'all',
@@ -22,35 +21,23 @@ function SearchTransactions() {
     })
     const [filteredTransactions, setFilteredTransactions] = useState([])
     const params = new URLSearchParams()
-
-
     useEffect(() => {
         getAccounts()
-        getExpenseCategories()
-        getIncomeCategories()
+        getCategories()
     }, [])
 
 
-    const getExpenseCategories = () => {
-        fetch('/api/expense-category/', {
+    const getCategories = () => {
+        fetch('/api/categories/', {
             method: 'GET',
             credentials: 'include'
         })
             .then((response) => response.json())
             .then((data) => {
-                setExpenseCategories(data)
+                setTransactionCategories(data)
             })
     }
-    const getIncomeCategories = () => {
-        fetch('/api/income-category/', {
-            method: 'GET',
-            credentials: 'include'
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                setIncomeCategories(data)
-            })
-    }
+
     const getAccounts = () => {
         fetch('/api/account/', {
             method: 'GET',
@@ -67,7 +54,7 @@ function SearchTransactions() {
             credentials: 'include'
         })
             .then((response) => response.json())
-            .then((data) => setFilteredTransactions(data))
+            .then((data) => { setFilteredTransactions(data); console.log(data) })
     }
     const handleSelectAll = () => {
         if (allSelected) {
@@ -82,27 +69,44 @@ function SearchTransactions() {
     return (
         <div className="account-page">
             <h1>Transactions</h1>
-            <input type="text" placeholder="Search" onChange={(e) => { setFilters((filter) => ({ ...filter, search_value: e.target.value })) }} />
+            <input type="text"
+                placeholder="Search"
+                onChange={(e) => {
+                    setFilteredTransactions([])
+                    setFilters((filter) => ({ ...filter, search_value: e.target.value }))
+                }} />
             <button onClick={() => handleSearch()}>Search</button>
             <p>Accounts</p>
             <select defaultValue={"all"}
-                onChange={(e) => { setFilters((filter) => ({ ...filter, account: e.target.value })) }}>
+                onChange={(e) => {
+                    setFilteredTransactions([])
+                    setFilters((filter) => ({ ...filter, account: e.target.value }))
+                }}>
                 <option value="all" >All Accounts</option>
                 {accounts.map((account) => {
                     return <option key={account.id} value={account.id}>{account.account_nickname}</option>
                 })}
             </select>
             <p>Categories</p>
-            <select onChange={(e) => { setFilters((filter) => ({ ...filter, category: e.target.value })) }}>
+            <select onChange={(e) => {
+                setFilteredTransactions([])
+                setFilters((filter) => ({ ...filter, category: e.target.value }))
+            }}>
                 <option value="all">All Categories</option>
-                {(type === "all" ? allCategories : type === 'expense' ? expenseCategories : incomeCategories).map((category) => {
-                    return <option key={`${category.id}${category.expense_category || category.income_category}`} value={category.id}>{category.expense_category || category.income_category}</option>
+                {transactionCategories.map((category) => {
+                    if (filters.type !== 'all' && category.transaction_type !== filters.type) return
+
+                    return <option key={`${category.id}${category.transaction_category}`}
+                        value={category.id}>{category.transaction_category}</option>
                 })}
             </select>
             <p>Types</p>
-            <select onChange={(e) => { setFilters((filter) => ({ ...filter, type: e.target.value })) }}
+            <select onChange={(e) => {
+                setFilteredTransactions([])
+                setFilters((filter) => ({ ...filter, type: e.target.value }))
+            }}
                 defaultValue={"all"}>
-                <option value="all" >All Types</option>
+                <option value="all">All Types</option>
                 <option value="expense">Expense</option>
                 <option value="income">Income</option>
                 <option value="transfer">Transfer</option>
@@ -117,6 +121,7 @@ function SearchTransactions() {
             </select>
 
             <div className="list-section">
+                <h3 className="list-header">All {type}</h3>
                 <table className="table-wrapper">
                     <thead>
                         <tr>
@@ -137,10 +142,10 @@ function SearchTransactions() {
                     <tbody>
                         {filteredTransactions.map((transaction) => (
                             <tr key={transaction.id}>
-                                <td>{transaction.expense_date || transaction.income_date}</td>
-                                <td>{transaction.expense_amount || transaction.income_amount}</td>
-                                <td>{transaction.expense_category || transaction.income_category}</td>
-                                <td>{transaction.expense_notes || transaction.income_notes}</td>
+                                <td>{transaction.transaction_date}</td>
+                                <td>{transaction.transaction_amount}</td>
+                                <td>{transaction.transaction_category}</td>
+                                <td>{transaction.transaction_notes}</td>
                                 <td><input type="checkbox"
                                     value={transaction.id}
                                     checked={selected.includes(transaction.id)}
