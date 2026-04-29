@@ -13,12 +13,15 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
     const [submitMessage, setSubmitMessage] = useState('')
     const [refresh, setRefresh] = useState(false)
     const [addedCategory, setAddedCategory] = useState('')
-    const apiBase = `/api/${type}-category/`
-    const groupedApi = `/api/get-grouped-${type}s/`
+    const apiBase = '/api/categories/'
+    const groupedApi = `/api/get-grouped-transactions/?type=${type}`
     const updateApi = `/api/categorize-${type}s/`
 
     const handleAddButton = () => {
-        apiPost(apiBase, { [`${type}_category`]: expense_category })
+        apiPost(apiBase, {
+            'transaction_category': expense_category,
+            'transaction_type': type
+        })
             .then((response) => response.json())
             .then((data) => {
                 setMessage(data.Message)

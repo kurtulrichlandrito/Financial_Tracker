@@ -115,3 +115,34 @@ class NetWorthSerializer(serializers.Serializer):
     total_assets = serializers.DecimalField(max_digits=15, decimal_places=2)
     total_liabilities = serializers.DecimalField(max_digits=15, decimal_places=2)
     net_worth = serializers.DecimalField(max_digits=15, decimal_places=2)
+
+class TransactionSerializer(ModelSerializer):
+    transaction_category = serializers.CharField(
+            source='expense_category.expense_category', 
+            read_only=True
+        )
+    account_id = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(),
+        source='account'
+    )
+
+    class Meta:
+        model = Transaction
+        fields = ('user',
+                  'transaction_date',
+                  'transaction_category',
+                  'transaction_amount',
+                  'transaction_notes',
+                  'account_id',
+                  'transaction_type')
+        read_only_fields = ('user',)
+
+class CategorySerializer(ModelSerializer):
+    
+    class Meta:
+        model = Category
+        fields = ('user', 
+                  'id', 
+                  'transaction_category',
+                  'transaction_type') 
+        read_only_fields = ('user',)

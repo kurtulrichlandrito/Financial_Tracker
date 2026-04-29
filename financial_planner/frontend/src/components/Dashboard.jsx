@@ -6,10 +6,8 @@ import CreateTransactionCategory from "./categories/CreateTransactionCategory";
 import UploadFiles from "./statements/UploadStatements";
 import CreateAsset from "./asset/CreateAsset";
 import CreateLiability from "./liabilities/CreateLiability";
-import ExpenseList from "./expenses/ExpenseList";
 import AssetList from "./asset/AssetList"
 import LiabilityList from "./liabilities/LiabilityList";
-import IncomeList from "./income/IncomeList";
 import Charts from "./charts/Charts";
 import CreateAccount from "./accounts/CreateAccount";
 import Accounts from "./accounts/Accounts";
@@ -18,15 +16,25 @@ import './Dashboard.css'
 import Navbar from './Navbar'
 import NetWorth from "./networth/NetWorth";
 import SearchTransactions from './search/SearchTransactions'
+import Reporting from './reporting/Reporting'
+import Expenses from "./expenses/Expenses";
+import Incomes from "./income/Incomes";
+import TransactionList from './transactions/TransactionsList'
+import Transfers from "./transfers/Transfers";
+
 const quickActions = [
-    { key: 'expense', label: 'Expense Category', icon: '🏷️' },
-    { key: 'income', label: 'Income Category', icon: '💰' },
+    { key: 'expenseCategory', label: 'Expense Category', icon: '🏷️' },
+    { key: 'incomeCategory', label: 'Income Category', icon: '💰' },
     { key: 'upload', label: 'Upload Statement', icon: '📤' },
     { key: 'asset', label: 'Add Asset', icon: '📈' },
     { key: 'liability', label: 'Add Liability', icon: '📉' },
     { key: 'account', label: 'Add Account', icon: '🏦' },
     { key: 'accounts', label: 'Accounts', icon: '🏦' },
-    { key: 'networth', label: 'Net Worth', icon: '🪙' },
+    { key: 'netWorth', label: 'Net Worth', icon: '🪙' },
+    { key: 'expenses', label: 'Expenses', icon: '🪙' },
+    { key: 'incomes', label: 'Incomes', icon: '🪙' },
+    { key: 'reporting', label: 'Reporting', icon: '🪙' },
+    { key: 'transfers', label: 'Transfers', icon: '🪙' },
 ]
 
 function Dashboard() {
@@ -67,10 +75,10 @@ function Dashboard() {
                 ))}
             </div>
 
-            <Dialog open={!!open.expense} onClose={() => toggle('expense', false)}>
+            <Dialog open={!!open.expenseCategory} onClose={() => toggle('expenseCategory', false)}>
                 <CreateTransactionCategory type="expense" onRefresh={reload} />
             </Dialog>
-            <Dialog open={!!open.income} onClose={() => toggle('income', false)}>
+            <Dialog open={!!open.incomeCategory} onClose={() => toggle('incomeCategory', false)}>
                 <CreateTransactionCategory type="income" globalRefresh={globalRefresh} onRefresh={reload} />
             </Dialog>
             <Dialog open={!!open.upload} onClose={() => toggle('upload', false)}>
@@ -88,21 +96,40 @@ function Dashboard() {
             <Dialog open={!!open.account} onClose={() => toggle('account', false)}>
                 <CreateAccount />
             </Dialog>
-            <Dialog open={!!open.networth} onClose={() => toggle('networth', false)}>
+            <Dialog open={!!open.netWorth} onClose={() => toggle('netWorth', false)}>
                 <NetWorth />
+            </Dialog>
+            <Dialog open={!!open.reporting} onClose={() => toggle('reporting', false)}>
+                <Reporting />
+            </Dialog>
+            <Dialog open={!!open.expenses} onClose={() => toggle('expenses', false)}>
+                <Expenses />
+            </Dialog>
+            <Dialog open={!!open.incomes} onClose={() => toggle('incomes', false)}>
+                <Incomes />
+            </Dialog>
+            <Dialog open={!!open.transfers} onClose={() => toggle('transfers', false)}>
+                <Transfers />
             </Dialog>
 
             <div className="dashboard-tables">
                 <div className="card">
-                    <ExpenseList globalRefresh={globalRefresh} onRefresh={reload} />
+                    <TransactionList type='expense' globalRefresh={globalRefresh} onRefresh={reload} />
                 </div>
-                <div className="card"><IncomeList globalRefresh={globalRefresh} onRefresh={reload} />
+                <div className="card">
+                    <TransactionList type='income' globalRefresh={globalRefresh} onRefresh={reload} />
+                </div>
+                <div className="card">
+                    <TransactionList type='transfer' globalRefresh={globalRefresh} onRefresh={reload} />
                 </div>
                 <div className="card">
                     <AssetList globalRefresh={globalRefresh} onRefresh={reload} />
                 </div>
                 <div className="card">
                     <LiabilityList globalRefresh={globalRefresh} onRefresh={reload} />
+                </div>
+                <div className="card">
+
                 </div>
             </div>
             <div>

@@ -91,5 +91,22 @@ class IncomeCategoryRule(models.Model):
     def __str__(self):
         return f"{self.category} - {self.keyword}"
 
+class Category(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    transaction_category = models.CharField(max_length=100)
+    transaction_type = models.CharField(max_length=100)
+    def __str__(self):
+        return f"{self.transaction_category} | {self.transaction_type}"
+    
+class Transaction(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    transaction_date = models.DateField()
+    transaction_category = models.ForeignKey(Category, null=True, on_delete=models.SET_NULL)
+    transaction_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_notes = models.TextField(null=True, blank=True)
+    transaction_type = models.CharField(max_length=100)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
 
-
+    def __str__(self):
+        return (f"{self.transaction_date} | {self.transaction_amount}" +
+                f"| {self.transaction_type} | {self.transaction_category}")

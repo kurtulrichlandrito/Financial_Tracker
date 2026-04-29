@@ -15,16 +15,29 @@ def data_extractor(file, account_type):
     decoded = file.read().decode('utf-8-sig')
     records = csv.DictReader(io.StringIO(decoded))
     transaction_data = []
+    transfers = ['CW', 'TF', 'TRSF', 'TRNSFR']
 
     for record in records:
-        transaction_date = datetime.strptime(record['Transaction Date'], "%Y%m%d").date()
+        transaction_date = datetime.strptime(
+                record['Transaction Date'], "%Y%m%d").date()
         transaction_amount = float(record['Transaction Amount'])
         transaction_notes = str(record['Description'])
-        transaction_type = (
-            'income' if account_type != 'credit' and transaction_amount > 0 
-            else 'expense')
-        transaction_data.append({f'{transaction_type}_date':transaction_date,
-                                f'{transaction_type}_amount': transaction_amount,
-                                f'{transaction_type}_notes': transaction_notes.strip()})
+
+        if any(transfer.lower() 
+               in transaction_notes.lower() 
+               for transfer in transfers):
+            transaction_type = 'transfer'
+        
+        else:
+            transaction_type = ( 'income' if 
+                                account_type != 'credit' 
+                                and transaction_amount > 0 
+                                else 'expense')
+            
+        transaction_data.append({'transaction_date':transaction_date,
+                                'transaction_amount': transaction_amount,
+                                'transaction_notes': transaction_notes.strip(),
+                                'transaction_type': transaction_type})
+        
     return transaction_data
 

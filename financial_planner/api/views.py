@@ -501,8 +501,7 @@ class Accounts(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
         
         if request.data.get('account_type') == 'credit':
-            liability = {'account_id': serializer.validated_data['id'], 
-                         'liability_name': request.data.get('account_nickname'),
+            liability = {'liability_name': request.data.get('account_nickname'),
                          'liability_amount': request.data.get('balance')}
             liability_serializer = LiabilitySerializer(data=liability)
 
@@ -670,3 +669,146 @@ class BatchCategorizeIncome(APIView):
         return Response(
             {'Message': 'Categories updated'}, 
             status=status.HTTP_200_OK)
+
+class Transactions(APIView):
+    def post(self, request, format=None):
+        user = self.request.user
+        serializer = TransactionSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(
+            {'Message': 'Invalid Request'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+        return Response(
+            {'Message': 'Added Expense'}, 
+            status=status.HTTP_200_OK)
+    
+    def get(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        transaction_type = request.GET.get('type')
+
+        transactions = Transaction.objects.all().filter(user=user, 
+                                transaction_type=transaction_type)
+        
+        serializer = TransactionSerializer(transactions, many=True)
+        return Response(
+            serializer.data, 
+            status=status.HTTP_200_OK)
+    
+class TransactionImport(APIView):
+    def post(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        account = json.loads(request.data.get('account'))
+        account_serializer = AccountSerializer(data=account)
+        
+        if not account_serializer.is_valid():
+            return Response(
+                {'Message': 'Account is not valid'}, 
+                status=status.HTTP_400_BAD_REQUEST) 
+        
+        file = self.request.FILES.get('file')
+        data = data_extractor(file, account['account_type'])
+
+        if not data:
+            return Response(
+                {'Message': 'File uploaded is not valid'}, 
+                status=status.HTTP_400_BAD_REQUEST)  
+         
+        has_invalid = False
+        has_duplicate = False
+        for transaction in data:
+            transaction['account_id'] = account['id']
+            serializer = TransactionSerializer(data=transaction)
+            
+            if not serializer.is_valid():
+                has_invalid = True
+                continue
+            exists = Transaction.objects.filter(
+            user=user,
+            **transaction
+            ).exists()
+            if exists:
+                has_duplicate = True
+                continue
+        
+            amount = transaction.get('transaction_amount')
+
+            Account.objects.filter(id=account.get('id')).update(
+                balance = F('balance') + Decimal(amount), 
+                date_updated= date.today())
+            serializer.save(user=user)
+                
+        if has_invalid:
+            return Response(
+                {'Message': 'Some transactions have invalid fields'}, 
+                status=status.HTTP_400_BAD_REQUEST)
+        elif has_duplicate:
+            return Response(
+                {'Message': 'Some Transactions Already Exists'}, 
+                status=status.HTTP_200_OK)
+        
+        return Response(
+            {'Message': 'All Transactions Imported Successfully'}, 
+            status=status.HTTP_200_OK)
+
+class Categories(APIView):
+    serializer_class = CategorySerializer
+    def post(self, request, format=None):
+        print(request.data)
+        serializer = CategorySerializer(data=request.data)
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        if not serializer.is_valid():
+            return Response(
+            {'Message': 'Invalid Request'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+            
+        transaction_category = request.data.get('transaction_category')
+        exists = Category.objects.filter(
+            user=request.user, 
+            transaction_category=transaction_category).exists()
+        
+        if exists:
+            return Response(
+            {'Message': 'Category Already Exists'}, 
+                        status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save(user=user)
+        return Response(
+            {'Message': 'Added Transaction Category'}, 
+            status=status.HTTP_200_OK)
+    
+    def get(self, request, format=None):
+
+        if not self.request.user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        
+        return Response(
+            serializer.data, 
+            status=status.HTTP_200_OK)
+

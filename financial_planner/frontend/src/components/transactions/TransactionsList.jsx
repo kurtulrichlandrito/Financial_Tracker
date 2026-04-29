@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react"
 import { apiDelete } from "../../utils/api"
 import '../lists.css'
-function IncomeList(globalRefresh, onRefresh) {
-    const [incomes, setIncomes] = useState([])
+function IncomeList({ type, globalRefresh, onRefresh }) {
+    const [transactions, setTransactions] = useState([])
     const [refresh, setRefresh] = useState(false)
     const [selected, SetSelected] = useState([])
     const [allSelected, setAllSelected] = useState(false)
 
     useEffect(() => {
-        fetch('/api/income/', {
+        fetch(`/api/transactions/?type=${type}`, {
             method: 'GET',
             credentials: 'include'
         })
             .then(response => response.json())
-            .then(data => { setIncomes(data) })
+            .then(data => { setTransactions(data) })
     }, [globalRefresh, refresh])
 
     const handleDelete = (items) => {
-        apiDelete('/api/income/', { items })
+        apiDelete(`/api/transactions/?type=${type}`, { items })
             .then(response => response.json())
             .then(data => setRefresh(!refresh))
     }
@@ -32,14 +32,14 @@ function IncomeList(globalRefresh, onRefresh) {
             SetSelected([])
             setAllSelected(false)
         } else {
-            SetSelected(incomes.map(expense => expense.id))
+            SetSelected(transactions.map(transaction => transaction.id))
             setAllSelected(true)
         }
     }
 
     return (
         <div className="list-section">
-            <h3 className="list-header">All Income</h3>
+            <h3 className="list-header">All {type}</h3>
             <table className="table-wrapper">
                 <thead>
                     <tr>
@@ -58,16 +58,16 @@ function IncomeList(globalRefresh, onRefresh) {
                     </tr>
                 </thead>
                 <tbody>
-                    {incomes.map((income) => (
-                        <tr key={income.id}>
-                            <td>{income.income_date}</td>
-                            <td>{income.income_amount}</td>
-                            <td>{income.income_category}</td>
-                            <td>{income.income_notes}</td>
+                    {transactions.map((transaction) => (
+                        <tr key={transaction.id}>
+                            <td>{transaction.transaction_date}</td>
+                            <td>{transaction.transaction_amount}</td>
+                            <td>{transaction.transaction_category}</td>
+                            <td>{transaction.transaction_notes}</td>
                             <td><input type="checkbox"
-                                value={income.id}
-                                checked={selected.includes(income.id)}
-                                onChange={() => handleChange(income.id)} />
+                                value={transaction.id}
+                                checked={selected.includes(transaction.id)}
+                                onChange={() => handleChange(transaction.id)} />
                             </td>
                         </tr>
                     ))}
