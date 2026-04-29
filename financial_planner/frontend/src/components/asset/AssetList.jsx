@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 
-function AssetList(props) {
+function AssetList({ globalRefresh, onRefresh }) {
     const [state, setState] = useState('')
     const [assets, setAssets] = useState([])
 
@@ -11,7 +11,7 @@ function AssetList(props) {
         })
             .then(response => response.json())
             .then(data => { setAssets(data) })
-    }, [props.refresh])
+    }, [globalRefresh])
     return (
         <div>
             <h3>All Asset</h3>

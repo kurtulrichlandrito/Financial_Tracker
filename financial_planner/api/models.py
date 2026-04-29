@@ -10,12 +10,25 @@ class ExpenseCategory(models.Model):
     def __str__(self):
         return self.expense_category
 
+class Account(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    account_nickname = models.CharField(max_length=100)
+    account_type = models.CharField(max_length=100)
+    date_added = models.DateField(default=timezone.now)
+    balance = models.DecimalField(max_digits=10, decimal_places=2)
+    date_updated = models.DateField(null=True)
+
+    def __str__(self):
+        return (f"{self.account_type} | {self.account_nickname} | "
+        + f"{self.balance} | {self.date_added}")
+
 class Expense(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     expense_date = models.DateField()
     expense_category = models.ForeignKey(ExpenseCategory, null=True, on_delete=models.SET_NULL)
     expense_amount = models.DecimalField(max_digits=10, decimal_places=2)
     expense_notes = models.TextField(null=True, blank=True)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.expense_amount} - {self.expense_date} - {self.expense_notes}"
@@ -32,18 +45,32 @@ class Income(models.Model):
     income_category = models.ForeignKey(IncomeCategory, null=True, on_delete=models.SET_NULL)
     income_amount = models.DecimalField(max_digits=10, decimal_places=2)
     income_notes= models.TextField(null=True, blank=True)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.income_amount} - {self.income_date} - {self.income_notes}"
 
 
 class Asset(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     asset_name = models.CharField(max_length=100, null=True)
-    asset_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    asset_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    @property
+    def computed_amount(self):
+        if self.account is not None:
+            return self.account.balance
+
+        return self.asset_amount
+    def __str__(self):
+        return f"{self.asset_name} | {self.asset_amount }"
+
+            
 
 
 class Liability(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     liability_name = models.CharField(max_length=100)
     liability_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -66,13 +93,3 @@ class IncomeCategoryRule(models.Model):
 
 
 
-class Account(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    account_nickname = models.CharField(max_length=100)
-    account_type = models.CharField(max_length=100)
-    date_added = models.DateField(default=timezone.now)
-    balance = models.DecimalField(max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return (f"{self.account_type} | {self.account_nickname} | "
-        + f"{self.balance} | {self.date_added}")

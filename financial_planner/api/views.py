@@ -10,6 +10,9 @@ from .utils.categorizer import get_model_and_serializer
 import json
 from decimal import Decimal
 from django.db.models import F
+from datetime import date
+from itertools import chain
+from django.db.models import Q
 
 # Create your views here.
 class CreateUser(APIView):
@@ -217,7 +220,6 @@ class IncomeCategories(APIView):
             return Response(
                 {'Message': 'User Not Does not Exist'}, 
                 status=status.HTTP_401_UNAUTHORIZED)
-        print(serializer)
         if not serializer.is_valid():
             
             return Response(
@@ -260,7 +262,6 @@ class ExpenseCategories(APIView):
             return Response(
                 {'Message': 'User Not Does not Exist'}, 
                 status=status.HTTP_401_UNAUTHORIZED)
-        print(serializer)
         if not serializer.is_valid():
             return Response(
             {'Message': 'Invalid Request'}, 
@@ -321,11 +322,12 @@ class ImportExpenses(APIView):
         has_duplicate = False
         for transaction in data:
             model, serializer = get_model_and_serializer(transaction)
+            transaction['account_id'] = account['id']
             serializer = serializer(data=transaction)
+            
             if not serializer.is_valid():
                 has_invalid = True
                 continue
-
             exists = model.objects.filter(
             user=user,
             **transaction
@@ -338,8 +340,8 @@ class ImportExpenses(APIView):
                 ) or transaction.get('income_amount')
 
             Account.objects.filter(id=account.get('id')).update(
-                balance = F('balance') + Decimal(amount))
-
+                balance = F('balance') + Decimal(amount), 
+                date_updated= date.today())
             serializer.save(user=user)
                 
         if has_invalid:
@@ -347,7 +349,6 @@ class ImportExpenses(APIView):
                 {'Message': 'Some transactions have invalid fields'}, 
                 status=status.HTTP_400_BAD_REQUEST)
         elif has_duplicate:
-            print('duplicate: ',transaction)
             return Response(
                 {'Message': 'Some Transactions Already Exists'}, 
                 status=status.HTTP_200_OK)
@@ -355,7 +356,7 @@ class ImportExpenses(APIView):
         return Response(
             {'Message': 'All Transactions Imported Successfully'}, 
             status=status.HTTP_200_OK)
-           
+         
 class GetGroupedExpenses(APIView):
     def get(self, request, format=None):
         user = self.request.user
@@ -484,7 +485,6 @@ class Accounts(APIView):
                 status=status.HTTP_401_UNAUTHORIZED)
         
         if not serializer.is_valid():
-            print(serializer.data)
             return Response(
             {'Message': 'Invalid Request'}, 
             status=status.HTTP_400_BAD_REQUEST)
@@ -499,7 +499,30 @@ class Accounts(APIView):
             return Response(
             {'Message': 'Account Already Exists'}, 
                         status=status.HTTP_400_BAD_REQUEST)
+        
+        if request.data.get('account_type') == 'credit':
+            liability = {'account_id': serializer.validated_data['id'], 
+                         'liability_name': request.data.get('account_nickname'),
+                         'liability_amount': request.data.get('balance')}
+            liability_serializer = LiabilitySerializer(data=liability)
+
+            if not liability_serializer.is_valid():
+                return Response(
+                {'Message': 'Failed to add Account as Liability'}, 
+                status=status.HTTP_200_OK)
+            liability_serializer.save(user=user)
+        else:
+            asset = {'asset_name': request.data.get('account_nickname'),
+                         'asset_amount': request.data.get('balance')}
+            asset_serializer = AssetSerializer(data=asset)
+            if not asset_serializer.is_valid():
+                return Response(
+                {'Message': 'Failed to add Account as Asset'}, 
+                status=status.HTTP_200_OK)
+            asset_serializer.save(user=user)
+
         serializer.save(user=user)
+
         return Response(
             {'Message': 'Added Account'}, 
             status=status.HTTP_200_OK)
@@ -514,4 +537,136 @@ class Accounts(APIView):
         serializer = AccountSerializer(accounts, many=True)
         return Response(
             serializer.data, 
+            status=status.HTTP_200_OK)
+
+class NetWorth(APIView):
+    def get(self, request,format=None):
+
+        user=self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        total_asset = sum(asset['asset_amount'] 
+                          for asset in Asset.objects.values())
+        total_liabilities = sum(liability['liability_amount'] 
+                              for liability in Liability.objects.values())
+        
+        net_worth = total_asset - total_liabilities
+
+        data = {
+            'total_assets' : total_asset,
+            'total_liabilities' : total_liabilities,
+            'net_worth' : net_worth
+        }
+
+        serializer = NetWorthSerializer(data)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class Search(APIView):
+    
+    def get(self, request, format=None):
+        user=self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        search_value = self.request.GET.get("search_value")
+        account_id = self.request.GET.get("account_id")
+        category_id = self.request.GET.get("category")
+        type = self.request.GET.get("type")
+        date_start = self.request.GET.get("date_start")
+
+        search_value = search_value.strip() if search_value else None
+        account_id = None if account_id in [None, "", "all"] else account_id
+        category_id = None if category_id in [None, "", "all"] else category_id
+        type = None if type in [None, "", "all"] else type
+        date_start = None if date_start in [None, "", "all"] else date_start  
+
+        income_qs = Income.objects.all()
+        expense_qs = Expense.objects.all()
+        if account_id:
+            income_qs = income_qs.filter(user=user, account_id=account_id)
+            expense_qs = expense_qs.filter(user=user, account_id=account_id)
+        
+        if type == "income":
+            expense_qs = expense_qs.none()
+        elif type == "expense":
+            income_qs = income_qs.none()
+
+        if search_value:
+            income_qs = income_qs.filter(
+                Q(income_notes__icontains=search_value), 
+                user=user
+            )
+
+            expense_qs = expense_qs.filter(
+                Q(expense_notes__icontains=search_value),
+                user=user
+            )
+        
+        if date_start:
+            income_qs = income_qs.filter(user=user, income_date__gte=date_start)
+            expense_qs = expense_qs.filter(user=user, expense_date__gte=date_start)
+        
+        data = (ExpenseSerializer(expense_qs, many=True).data + 
+                IncomeSerializer(income_qs, many=True).data)
+        
+        return Response(data, status=status.HTTP_200_OK) 
+
+class BatchCategorizeExpense(APIView):
+    def patch(self, request, format=None):
+            user = self.request.user
+            if not user.is_authenticated:
+                return Response(
+                    {'Message': 'Unauthorized'}, 
+                    status=status.HTTP_401_UNAUTHORIZED)
+            
+            data = self.request.data
+            for item in data:
+                category = item.get('category')
+                category_id = ExpenseCategory.objects.get(expense_category=category, 
+                                                        user=self.request.user)
+                expense_ids = item.get('expenseIds')
+                expense = Expense.objects.filter(id__in=expense_ids)
+                expense.update(
+                    expense_category=category_id)
+                ExpenseCategoryRule.objects.get_or_create(
+                    category=category_id,
+                    user=user,
+                    keyword=expense.first().expense_notes
+                )
+                
+            return Response(
+                {'Message': 'Categories updated'}, 
+                status=status.HTTP_200_OK)
+    
+class BatchCategorizeIncome(APIView):
+    def patch(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'Unauthorized'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        data = self.request.data
+        for item in data:
+            category = item.get('category')
+            category_id = IncomeCategory.objects.get(income_category=category, 
+                                                      user=self.request.user)
+            income_ids = item.get('incomeIds')
+            income = Income.objects.filter(id__in=income_ids)
+            income.update(
+                income_category=category_id)
+            IncomeCategoryRule.objects.get_or_create(
+                category=category_id,
+                user=user,
+                keyword=income.first().income_notes
+            )
+            
+        return Response(
+            {'Message': 'Categories updated'}, 
             status=status.HTTP_200_OK)

@@ -1,5 +1,9 @@
 /* Shared list/table styles */
-.list-section { margin-bottom: 1.5rem; }
+.list-section {
+  margin-bottom: 1.5rem;
+  height: 700px;
+  overflow-y: scroll;
+}
 
 .list-header {
   display: flex;
@@ -8,7 +12,9 @@
   margin-bottom: .75rem;
 }
 
-.list-header h3 { margin: 0; }
+.list-header h3 {
+  margin: 0;
+}
 
 .table-wrapper {
   overflow-x: auto;

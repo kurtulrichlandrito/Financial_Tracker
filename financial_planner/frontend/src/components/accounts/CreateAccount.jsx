@@ -28,11 +28,15 @@ function CreateAccount() {
             </div>
 
             <div className="field">
-                <p>Account Nickname</p>
+                <p>Account Name</p>
                 <input type="text" onChange={(e) => {
                     setAccountNickname(e.target.value)
                     setMessage('')
                 }} />
+            </div>
+            <div className="field">
+                <p>Account Number</p>
+                <input type="text" placeholder="To be implemented" />
             </div>
             <div className="field">
                 <p>Current Balance</p>

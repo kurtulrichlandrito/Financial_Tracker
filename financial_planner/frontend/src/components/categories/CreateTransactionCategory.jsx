@@ -15,7 +15,7 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
     const [addedCategory, setAddedCategory] = useState('')
     const apiBase = `/api/${type}-category/`
     const groupedApi = `/api/get-grouped-${type}s/`
-    const updateApi = `/api/${type}/`
+    const updateApi = `/api/categorize-${type}s/`
 
     const handleAddButton = () => {
         apiPost(apiBase, { [`${type}_category`]: expense_category })
@@ -119,8 +119,10 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
                         {expandedRow === key && expenseGroup[`${type}`].map((expense) => (
                             <tr key={expense.id}>
                                 <td></td>
+                                <td>{expense[`${type}_notes`]}</td>
                                 <td>{expense[`${type}_date`]}</td>
                                 <td>{expense[`${type}_amount`]}</td>
+
                             </tr>
                         ))}
                     </tbody>

@@ -16,5 +16,9 @@ urlpatterns = [
     path('upload-files/', ImportExpenses.as_view()),
     path('get-grouped-expenses/', GetGroupedExpenses.as_view()),
     path('get-grouped-incomes/', GetGroupedIncomes.as_view()),
-    path('account/', Accounts.as_view())
+    path('account/', Accounts.as_view()),
+    path('net-worth/', NetWorth.as_view()),
+    path('search', Search.as_view()),
+    path('categorize-expenses/', BatchCategorizeExpense.as_view()),
+    path('categorize-incomes/', BatchCategorizeIncome.as_view()),
 ]

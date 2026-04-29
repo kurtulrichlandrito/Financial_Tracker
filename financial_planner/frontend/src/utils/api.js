@@ -19,4 +19,5 @@ const apiRequest = (url, method, data = null) => {
 export const apiPost = (url, data = null) => apiRequest(url, 'POST', data)
 export const apiPatch = (url, data = null) => apiRequest(url, 'PATCH', data)
 export const apiDelete = (url, data = null) => apiRequest(url, 'DELETE', data)
+
 export default apiPost

@@ -45,6 +45,10 @@ class ExpenseSerializer(ModelSerializer):
         source='expense_category.expense_category', 
         read_only=True
     )
+    account_id = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(),
+        source='account'
+    )
     class Meta:
         model = Expense
         fields = ('user', 
@@ -52,7 +56,8 @@ class ExpenseSerializer(ModelSerializer):
                   'expense_date', 
                   'expense_category', 
                   'expense_amount', 
-                  'expense_notes')
+                  'expense_notes',
+                  'account_id')
         read_only_fields = ('user',)
 
 class IncomeCategorySerializer(ModelSerializer):
@@ -66,6 +71,10 @@ class IncomeSerializer(ModelSerializer):
         source='income_category.income_category', 
         read_only=True
     )
+    account_id = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(),
+        source='account'
+    )
     class Meta:
         model = Income
         fields = ('user', 
@@ -73,7 +82,8 @@ class IncomeSerializer(ModelSerializer):
                   'income_date', 
                   'income_category', 
                   'income_amount',
-                  'income_notes')
+                  'income_notes',
+                  'account_id')
         read_only_fields = ('user',)
 
 class AssetSerializer(ModelSerializer):
@@ -97,5 +107,11 @@ class AccountSerializer(ModelSerializer):
                    'account_type',
                    'date_added',
                    'balance',
-                   'account_nickname')
+                   'account_nickname',
+                   'date_updated')
         read_only_fields = ('user', 'date_added')
+
+class NetWorthSerializer(serializers.Serializer):
+    total_assets = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_liabilities = serializers.DecimalField(max_digits=15, decimal_places=2)
+    net_worth = serializers.DecimalField(max_digits=15, decimal_places=2)

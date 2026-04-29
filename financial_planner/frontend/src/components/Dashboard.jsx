@@ -12,16 +12,21 @@ import LiabilityList from "./liabilities/LiabilityList";
 import IncomeList from "./income/IncomeList";
 import Charts from "./charts/Charts";
 import CreateAccount from "./accounts/CreateAccount";
+import Accounts from "./accounts/Accounts";
 import './global.css'
 import './Dashboard.css'
-
-const ACTIONS = [
+import Navbar from './Navbar'
+import NetWorth from "./networth/NetWorth";
+import SearchTransactions from './search/SearchTransactions'
+const quickActions = [
     { key: 'expense', label: 'Expense Category', icon: '🏷️' },
     { key: 'income', label: 'Income Category', icon: '💰' },
     { key: 'upload', label: 'Upload Statement', icon: '📤' },
     { key: 'asset', label: 'Add Asset', icon: '📈' },
     { key: 'liability', label: 'Add Liability', icon: '📉' },
     { key: 'account', label: 'Add Account', icon: '🏦' },
+    { key: 'accounts', label: 'Accounts', icon: '🏦' },
+    { key: 'networth', label: 'Net Worth', icon: '🪙' },
 ]
 
 function Dashboard() {
@@ -42,6 +47,7 @@ function Dashboard() {
 
     return (
         <div id="dashboard">
+            <Navbar />
             <div className="dashboard-header">
                 <h1>Dashboard</h1>
                 <button className="btn btn-ghost" onClick={Logout}>Logout</button>
@@ -54,7 +60,7 @@ function Dashboard() {
 
             <h2>Quick Actions</h2>
             <div className="dashboard-actions">
-                {ACTIONS.map(({ key, label, icon }) => (
+                {quickActions.map(({ key, label, icon }) => (
                     <button key={key} className="action-card" onClick={() => toggle(key, true)}>
                         <span>{icon}</span>{label}
                     </button>
@@ -76,8 +82,14 @@ function Dashboard() {
             <Dialog open={!!open.liability} onClose={() => toggle('liability', false)}>
                 <CreateLiability />
             </Dialog>
+            <Dialog open={!!open.accounts} onClose={() => toggle('accounts', false)}>
+                <Accounts />
+            </Dialog>
             <Dialog open={!!open.account} onClose={() => toggle('account', false)}>
                 <CreateAccount />
+            </Dialog>
+            <Dialog open={!!open.networth} onClose={() => toggle('networth', false)}>
+                <NetWorth />
             </Dialog>
 
             <div className="dashboard-tables">
@@ -87,11 +99,16 @@ function Dashboard() {
                 <div className="card"><IncomeList globalRefresh={globalRefresh} onRefresh={reload} />
                 </div>
                 <div className="card">
-                    <AssetList globalRefresh={globalRefresh} />
+                    <AssetList globalRefresh={globalRefresh} onRefresh={reload} />
                 </div>
                 <div className="card">
                     <LiabilityList globalRefresh={globalRefresh} onRefresh={reload} />
                 </div>
+            </div>
+            <div>
+                <h2>Search</h2>
+                <SearchTransactions />
+
             </div>
         </div>
     )

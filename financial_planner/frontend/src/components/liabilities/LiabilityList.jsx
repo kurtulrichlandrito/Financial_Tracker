@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 
-function LiabilityList(props) {
+function LiabilityList({ globalRefresh, onRefresh }) {
     const [liabilities, setLiabilities] = useState([])
 
     useEffect(() => {
@@ -10,7 +10,7 @@ function LiabilityList(props) {
         })
             .then(response => response.json())
             .then(data => { setLiabilities(data) })
-    }, [props.refresh])
+    }, [globalRefresh])
     return (
         <div>
             <h3>All Liabilities</h3>

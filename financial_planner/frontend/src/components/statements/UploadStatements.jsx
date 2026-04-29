@@ -41,20 +41,42 @@ function UploadFiles({ onRefresh }) {
 
     return (
         <div className="upload-page">
-            <form onSubmit={handleAddButton}>
+            <form onSubmit={() => { handleAddButton(); setMessage('Uploading File..') }}>
                 <h1>Upload Files</h1>
                 <p>Upload CSV from transaction history of accounts</p>
                 <p>*Remove all sensitive information</p>
                 <div className="upload-actions">
                     <p>Choose Account</p>
-                    <select className="field" onChange={(e) => { setAccount(accounts.find(account => account.id == e.target.value)) }} defaultValue={""}>
+                    <select className="field" onChange={(e) => {
+                        setAccount(accounts.find(account => account.id == e.target.value))
+                        setMessage('');
+                        setCategorizeButton(false)
+                    }}
+                        defaultValue={""}>
                         <option value="" disabled hidden>Please choose...</option>
                         {accounts.map((account) => (
-                            <option key={account.id} value={account.id}>{account.account_nickname} ({account.account_type})</option>
+                            <option key={account.id}
+                                value={account.id}>
+                                {account.account_nickname} ({account.account_type})
+                            </option>
                         ))}
                     </select>
-                    <input type="file" accept=".csv" onChange={(e) => { setFile(e.target.files[0]); setMessage('') }} />
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Upload</button>
+                    <input type="file"
+                        accept=".csv"
+                        onChange={(e) => {
+                            setFile(e.target.files[0]);
+                            setMessage('');
+                            setCategorizeButton(false)
+                        }} />
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{
+                            width: '100%',
+                            justifyContent: 'center'
+                        }}>
+                        Upload
+                    </button>
                 </div>
 
 
