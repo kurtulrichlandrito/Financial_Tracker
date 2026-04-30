@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from "react"
+import { useState, useEffect } from "react"
 import { apiPost, apiPatch } from '../../utils/api'
 import '../global.css'
 import '../categories.css'
@@ -13,24 +13,49 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
     const [submitMessage, setSubmitMessage] = useState('')
     const [refresh, setRefresh] = useState(false)
     const [addedCategory, setAddedCategory] = useState('')
+    const [addingCategoryFor, setAddingCategoryFor] = useState(null)
     const apiBase = `/api/categories/?type=${type}`
     const groupedApi = `/api/get-grouped-transactions/?${new URLSearchParams({
         type,
         orderby: '-transaction_date'
     }).toString()}`
 
-    const handleAddButton = () => {
+    const handleAddButton = (transactionGroupKey) => {
+        const newCategory = transaction_category.trim()
+
+        if (!newCategory) return
+
         apiPost(apiBase, {
-            'transaction_category': transaction_category,
+            'transaction_category': newCategory,
             'transaction_type': type
         })
             .then((response) => response.json()
                 .then((data) => ({ ok: response.ok, data })))
             .then(({ ok, data }) => {
                 setMessage(data.Message)
-                setAddedCategory(transaction_category)
+                setAddedCategory(newCategory)
 
                 if (ok) {
+                    setTransactionCategories((categories) => {
+                        const exists = categories.some((category) =>
+                            category.transaction_category === newCategory)
+
+                        if (exists) return categories
+
+                        return [
+                            ...categories,
+                            {
+                                id: `new-${newCategory}`,
+                                transaction_category: newCategory,
+                                transaction_type: type
+                            }
+                        ]
+                    })
+                    setCategorizedTransaction((current) => ({
+                        ...current,
+                        [transactionGroupKey]: newCategory
+                    }))
+                    setAddingCategoryFor(null)
                     setTransactionCategory('')
                     getCategories()
                     onRefresh?.()
@@ -92,24 +117,9 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
 
     return (
         <div className="category-page">
-            <h1>Add An {type.toUpperCase()} Category</h1>
-            <input id="input"
-                type="text"
-                value={transaction_category}
-                onChange={(e) => {
-                    setTransactionCategory(e.target.value)
-                    setMessage('')
-                }} />
-            <button className="btn"
-                onClick={handleAddButton}
-                style={{ width: '100%', justifyContent: 'center' }}
-            >Add
-            </button>
-
-            {message && <p>{message}: {addedCategory}</p>}
-
             <h2>Categorize transactions</h2>
             <p>transactions have been grouped automatically (Add choice later to separate)</p>
+            {message && <p>{message}: {addedCategory}</p>}
             <table className="category-table-wrapper">
 
                 {Object.entries(groupedTransactions).map(([key, transactionGroup]) => (
@@ -122,15 +132,21 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
                             <td>{transactionGroup['transaction'].length} transactions</td>
                             <td>
                                 <select onClick={(e) => e.stopPropagation()} onChange={(e) => {
+                                    if (e.target.value === 'add_new') {
+                                        setAddingCategoryFor(key)
+                                        setTransactionCategory('')
+                                        return
+                                    }
+
                                     setCategorizedTransaction({
                                         ...categorizedTransaction,
                                         [key]: e.target.value
                                     })
+                                    setAddingCategoryFor(null)
                                     setSubmitMessage('')
                                 }
                                 }
-                                    defaultValue={transactionGroup.suggested_category ?
-                                        transactionGroup.suggested_category : ''}>
+                                    value={categorizedTransaction[key] || ''}>
                                     <option value="" disabled hidden>Please choose...</option>
                                     {transaction_categories.map((category) => (
                                         <option
@@ -139,7 +155,34 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
                                             {category.transaction_category}
                                         </option>
                                     ))}
+                                    <option value="add_new">Add new category...</option>
                                 </select>
+                                {addingCategoryFor === key && (
+                                    <div onClick={(e) => e.stopPropagation()}>
+                                        <input
+                                            id="input"
+                                            type="text"
+                                            value={transaction_category}
+                                            onChange={(e) => {
+                                                setTransactionCategory(e.target.value)
+                                                setMessage('')
+                                            }} />
+                                        <button className="btn"
+                                            onClick={() => handleAddButton(key)}
+                                            style={{ width: '50%', justifyContent: 'center' }}
+                                        >Add
+                                        </button>
+                                        <button className="btn"
+                                            onClick={() => {
+                                                setAddingCategoryFor(null)
+                                                setTransactionCategory('')
+                                                setMessage('')
+                                            }}
+                                            style={{ width: '50%', justifyContent: 'center' }}
+                                        >Cancel
+                                        </button>
+                                    </div>
+                                )}
                             </td>
                         </tr>
                         {expandedRow === key && transactionGroup.transaction.map((transaction) => (

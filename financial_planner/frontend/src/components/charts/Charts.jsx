@@ -1,76 +1,172 @@
 import { useState, useEffect } from "react"
 import { PieChart } from '@mui/x-charts/PieChart';
+import currencyFormatter from "../../utils/currencyFormatter";
+
+const chartColors = [
+    '#ff4326', '#ffcf48', '#6c45f5', '#36A2EB',
+    '#9966FF', '#FF9F40', '#E7E9ED', '#71B37C',
+    '#A78BFA', '#F87171', '#34D399', '#60A5FA'
+]
+
+
 
 function Charts({ type, globalRefresh }) {
-    const [expenseData, setExpenseData] = useState({})
-    const [expenseCategories, setExpenseCategories] = useState({})
+    const [transactions, setTransactions] = useState([])
+    const [dateView, setDateView] = useState('all')
 
     useEffect(() => {
-        fetch(`/api/${type}/`, {
+        const params = new URLSearchParams({
+            type,
+            orderby: '-transaction_date'
+        })
+
+        fetch(`/api/transactions/?${params.toString()}`, {
             method: 'GET',
             credentials: 'include'
         })
             .then(response => response.json())
-            .then(data => setExpenseData(data))
-    }, [globalRefresh])
-    useEffect(() => {
-        fetch(`/api/${type}-category/`, {
-            method: 'GET',
-            credentials: 'include'
-        })
-            .then(response => response.json())
-            .then(data => { setExpenseCategories(data) })
-    }, [globalRefresh])
-    const processData = () => {
-        const categories = Object.values(expenseCategories).map(category => category[`${type}_category`])
-        const getColors = (count) => {
-            const colors = [
-                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-                '#9966FF', '#FF9F40', '#E7E9ED', '#71B37C',
-                '#A78BFA', '#F87171', '#34D399', '#60A5FA'
-            ]
-            return Array.from({ length: count }, (_, i) => colors[i % colors.length])
+            .then(data => setTransactions(data))
+    }, [globalRefresh, type])
+
+    const isInSelectedDateView = (transaction) => {
+        if (dateView === 'all') return true
+
+        const transactionDate = new Date(`${transaction.transaction_date}T00:00:00`)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        if (dateView === 'monthly') {
+            return transactionDate.getFullYear() === today.getFullYear()
+                && transactionDate.getMonth() === today.getMonth()
         }
-        const colors = getColors(categories.length)
-        const categoryColors = categories.map((category, index) => { category: colors[index] })
-        const totalExpense = Object.values(expenseData).reduce((total, expense) => total + -parseFloat(expense[`${type}_amount`]), 0)
-        const data = categories.flatMap((category) => {
-            const categoryTotalAmount = Object.values(expenseData)
-                .filter((expense) => expense[`${type}_category`] === category)
-                .reduce((total, expense) => total + parseFloat(expense[`${type}_amount`]), 0);
-            if (categoryTotalAmount > 0) {
-                return {
-                    id: category,
-                    label: `${category}`,
-                    value: categoryTotalAmount,
-                    percentage: (categoryTotalAmount / totalExpense) * 100,
-                    color: categoryColors[category]
-                }
-            }
 
-        })
-        return data.filter(Boolean)
+        const weekStart = new Date(today)
+        weekStart.setDate(today.getDate() - today.getDay())
+
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekStart.getDate() + 6)
+
+        return transactionDate >= weekStart && transactionDate <= weekEnd
     }
 
-    return (
-        <div style={{ height: '300px', width: 'auto' }}>
-            <h2>{type.toUpperCase()}</h2>
-            <PieChart
-                series={[
-                    {
-                        data: processData(),
-                        innerRadius: 50,
-                        outerRadius: 100,
-                        paddingAngle: .5,
-                        cornerRadius: 5,
-                        startAngle: 0,
-                        endAngle: 360,
-                        cx: 150,
-                        cy: 150,
+    const processData = () => {
+        const categoryTotals = transactions
+            .filter(isInSelectedDateView)
+            .reduce((totals, transaction) => {
+                const category = transaction.transaction_category_name || 'Uncategorized'
+                const amount = Math.abs(parseFloat(transaction.transaction_amount || 0))
 
-                    }
-                ]}
-            />
+                return {
+                    ...totals,
+                    [category]: (totals[category] || 0) + amount
+                }
+            }, {})
+
+        return Object.entries(categoryTotals)
+            .filter(([, amount]) => amount > 0)
+            .map(([category, amount], index) => ({
+                id: category,
+                label: category,
+                value: amount,
+                color: chartColors[index % chartColors.length]
+            }))
+    }
+
+    const chartData = processData()
+    const totalAmount = chartData.reduce((total, item) => total + item.value, 0)
+
+    return (
+        <div style={{
+            width: '320px',
+            minHeight: '320px',
+            margin: '0 auto',
+            textAlign: 'center'
+        }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.75rem'
+            }}>
+                <h2 style={{ margin: 0 }}>{type.toUpperCase()}</h2>
+                <select
+                    value={dateView}
+                    onChange={(event) => setDateView(event.target.value)}>
+                    <option value="all">All Time</option>
+                    <option value="weekly">This Week</option>
+                    <option value="monthly">This Month</option>
+                </select>
+            </div>
+
+            <div style={{ position: 'relative', height: '220px' }}>
+                <PieChart
+                    hideLegend
+                    width={320}
+                    height={220}
+                    margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
+                    series={[
+                        {
+                            data: chartData,
+                            innerRadius: 82,
+                            outerRadius: 98,
+                            paddingAngle: 1,
+                            cornerRadius: 12,
+                            startAngle: -115,
+                            endAngle: 115,
+                            cx: 160,
+                            cy: 120,
+                        }
+                    ]}
+                />
+                <div style={{
+                    position: 'absolute',
+                    bottom: '40px',
+                    left: '180px',
+                    transform: 'translate(-50%, -50%)',
+                    width: '190px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}>
+                    <div style={{
+                        fontSize: '2.15rem',
+                        lineHeight: 1,
+                        fontWeight: 700,
+                        letterSpacing: '-0.04em',
+                        textAlign: 'center',
+                        width: '190px'
+                    }}>
+                        {totalAmount === 0 ? "" : currencyFormatter.format(totalAmount)}
+                    </div>
+                    <div style={{
+                        marginTop: '0.55rem',
+                        color: '#555',
+                        fontSize: '0.85rem',
+                        textAlign: 'center',
+                        width: '190px'
+                    }}>
+                        {totalAmount === 0 ? "" : dateView === 'all' ? 'All Time' : dateView === 'weekly' ? 'This Week' : 'This Month'}
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex justify-center flex-wrap gap-3.5 m-1 text-xs" >
+                {chartData.map((item) => (
+                    <span key={item.id} style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem'
+                    }}>
+                        <span style={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            backgroundColor: item.color,
+                            display: 'inline-block'
+                        }} />
+                        {item.label}
+                    </span>
+                ))}
+            </div>
         </div>
     )
 }
