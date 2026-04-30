@@ -117,9 +117,8 @@ class NetWorthSerializer(serializers.Serializer):
     net_worth = serializers.DecimalField(max_digits=15, decimal_places=2)
 
 class TransactionSerializer(ModelSerializer):
-    transaction_category = serializers.CharField(
-            source='transaction_category.transaction_category', 
-            read_only=True
+    transaction_category = serializers.PrimaryKeyRelatedField(
+            queryset=Category.objects.all(),
         )
     account_id = serializers.PrimaryKeyRelatedField(
         queryset=Account.objects.all(),

@@ -16,7 +16,7 @@ import './Dashboard.css'
 import Navbar from './Navbar'
 import NetWorth from "./networth/NetWorth";
 import SearchTransactions from './search/SearchTransactions'
-import Reporting from './reporting/Reporting'
+import Reports from './reporting/Reporting'
 import Expenses from "./expenses/Expenses";
 import Incomes from "./income/Incomes";
 import TransactionList from './transactions/TransactionsList'
@@ -100,7 +100,7 @@ function Dashboard() {
                 <NetWorth />
             </Dialog>
             <Dialog open={!!open.reporting} onClose={() => toggle('reporting', false)}>
-                <Reporting />
+                <Reports />
             </Dialog>
             <Dialog open={!!open.expenses} onClose={() => toggle('expenses', false)}>
                 <Expenses />

@@ -17,4 +17,5 @@ urlpatterns = [
     path('net-worth/', NetWorth.as_view()),
     path('search', Search.as_view()),
     path('categorize-transactions/', BatchCategorizeTransactions.as_view()),
+    path('reports/', Reports.as_view()),
 ]

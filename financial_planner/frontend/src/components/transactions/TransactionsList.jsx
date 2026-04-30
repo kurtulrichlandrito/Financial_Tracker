@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import { apiDelete } from "../../utils/api"
 import '../lists.css'
+import CreateTransaction from './CreateTransaction'
+
 function IncomeList({ type, globalRefresh, onRefresh }) {
     const [transactions, setTransactions] = useState([])
     const [refresh, setRefresh] = useState(false)
@@ -39,6 +41,7 @@ function IncomeList({ type, globalRefresh, onRefresh }) {
 
     return (
         <div className="list-section">
+            <CreateTransaction type={type} />
             <h3 className="list-header">All {type}</h3>
             <table className="table-wrapper">
                 <thead>

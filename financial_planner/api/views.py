@@ -8,10 +8,8 @@ from .utils.data_extraction import data_extractor
 from .utils.group_by_description import get_or_create_group
 import json
 from decimal import Decimal
-from django.db.models import F
 from datetime import date
-from itertools import chain
-from django.db.models import Q
+from django.db.models import F, Q, Sum
 
 # Create your views here.
 class CreateUser(APIView):
@@ -142,10 +140,9 @@ class Transactions(APIView):
             return Response(
             {'Message': 'User Not Does not Exist'}, 
             status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer.save()
+        serializer.save(user=user)
         return Response(
-            {'Message': 'Added Expense'}, 
+            {'Message': 'Added Transaction'}, 
             status=status.HTTP_200_OK)
     
     def get(self, request, format=None):
@@ -165,6 +162,25 @@ class Transactions(APIView):
         serializer = TransactionSerializer(transactions, many=True)
         return Response(
             serializer.data, 
+            status=status.HTTP_200_OK)
+    
+    def delete(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+        
+        transaction_type = request.GET.get('type')
+        transaction_ids = request.data.get('items')
+        transactions = Transaction.objects.all().filter(user=user, 
+                                                        transaction_type=transaction_type,
+                                                         id__in=transaction_ids)
+        
+        transactions.delete()
+
+        return Response(
+            {'Message': f'{len(transactions)} Deleted'}, 
             status=status.HTTP_200_OK)
     
 class TransactionImport(APIView):
@@ -194,8 +210,8 @@ class TransactionImport(APIView):
         has_duplicate = False
         for transaction in data:
             transaction['account_id'] = account['id']
+            print(transaction)
             serializer = TransactionSerializer(data=transaction)
-            
             if not serializer.is_valid():
                 has_invalid = True
                 continue
@@ -268,7 +284,7 @@ class Categories(APIView):
         categories = Category.objects.all().filter(user=user)
 
         if type:
-            categories.filter(transaction_type=type)
+            categories = categories.filter(transaction_type=type)
 
         serializer = CategorySerializer(categories, many=True)
         
@@ -299,7 +315,7 @@ class GetGroupedTransactions(APIView):
             ).first()
                 grouped[matched_key] = {
                     'transaction': [],
-                    'suggested_category': rule.category.transaction_category if rule else None
+                    'suggested_category': rule.transaction_category.transaction_category if rule else None
                 }
             grouped[matched_key]['transaction'].append(TransactionSerializer(transaction).data)
         
@@ -421,7 +437,6 @@ class NetWorth(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class Search(APIView):
-    
     def get(self, request, format=None):
         user=self.request.user
         if not user.is_authenticated:
@@ -459,3 +474,23 @@ class Search(APIView):
         return Response(
             serializer.data, 
             status=status.HTTP_200_OK)
+
+class Reports(APIView):
+    def get(self, request, format=None):
+        user=self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        account 
+        total_expense = Transaction.objects.filter(
+        user=request.user,
+        transaction_type='expense'
+        ).aggregate(total=Sum('transaction_amount'))['total'] 
+        total_income = Transaction.objects.filter(
+        user=request.user,
+        transaction_type='income'
+        ).aggregate(total=Sum('transaction_amount'))['total'] 
+
+        
