@@ -75,10 +75,19 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
     }
 
     useEffect(() => {
+        setTransactionCategories([])
+        setTransactionCategory('')
+        setMessage('')
+        setAddedCategory('')
+        setAddingCategoryFor(null)
         getCategories()
-    }, [])
+    }, [type])
 
     useEffect(() => {
+        setGroupTransactionCategory({})
+        setCategorizedTransaction({})
+        setExpandedRow(null)
+        setSubmitMessage('')
         fetch(groupedApi, {
             credentials: 'include'
         })
@@ -93,7 +102,7 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
                 })
                 setCategorizedTransaction(suggestedCategories)
             })
-    }, [globalRefresh, refresh])
+    }, [type, globalRefresh, refresh])
 
     const handleSubmit = () => {
         const categorizedData = Object.entries(categorizedTransaction)
