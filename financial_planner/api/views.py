@@ -29,6 +29,22 @@ def get_transaction_ordering(request):
 
     return ordering
 
+
+def validate_transaction_relationships(serializer, user):
+    account = serializer.validated_data.get('account')
+    if account is not None and account.user_id != user.id:
+        return Response(
+            {'Message': 'Account not found'},
+            status=status.HTTP_404_NOT_FOUND)
+
+    transaction_category = serializer.validated_data.get('transaction_category')
+    if transaction_category is not None and transaction_category.user_id != user.id:
+        return Response(
+            {'Message': 'Category not found'},
+            status=status.HTTP_404_NOT_FOUND)
+
+    return None
+
 # Create your views here.
 class CreateUser(APIView):
     serializer_class = UserSerializer
@@ -138,12 +154,13 @@ class Accounts(APIView):
             status=status.HTTP_200_OK)
         
     def get(self, request, format=None):
-        if not self.request.user.is_authenticated:
+        user = self.request.user
+        if not user.is_authenticated:
             return Response(
             {'Message': 'User Not Does not Exist'}, 
             status=status.HTTP_400_BAD_REQUEST)
         
-        accounts = Account.objects.all()
+        accounts = Account.objects.all().filter(user=user)
         serializer = AccountSerializer(accounts, many=True)
         return Response(
             serializer.data, 
@@ -222,6 +239,11 @@ class Transactions(APIView):
             return Response(
             {'Message': 'User Not Does not Exist'}, 
             status=status.HTTP_400_BAD_REQUEST)
+
+        ownership_error = validate_transaction_relationships(serializer, user)
+        if ownership_error:
+            return ownership_error
+
         serializer.save(user=user)
         return Response(
             {'Message': 'Added Transaction'}, 
@@ -301,6 +323,10 @@ class Transactions(APIView):
                 serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST)
 
+        ownership_error = validate_transaction_relationships(serializer, user)
+        if ownership_error:
+            return ownership_error
+
         serializer.save(user=user)
 
         return Response(
@@ -324,6 +350,15 @@ class TransactionImport(APIView):
             return Response(
                 {'Message': 'Account is not valid'}, 
                 status=status.HTTP_400_BAD_REQUEST) 
+
+        account_instance = Account.objects.filter(
+            id=account.get('id'),
+            user=user
+        ).first()
+        if account_instance is None:
+            return Response(
+                {'Message': 'Account not found'}, 
+                status=status.HTTP_404_NOT_FOUND)
         
         file = self.request.FILES.get('file')
         data = data_extractor(file, account['account_type'])
@@ -336,7 +371,7 @@ class TransactionImport(APIView):
         has_invalid = False
         has_duplicate = False
         for transaction in data:
-            transaction['account_id'] = account['id']
+            transaction['account_id'] = account_instance.id
             serializer = TransactionSerializer(data=transaction)
             if not serializer.is_valid():
                 has_invalid = True
@@ -352,7 +387,7 @@ class TransactionImport(APIView):
         
             amount = transaction.get('transaction_amount')
 
-            Account.objects.filter(id=account.get('id')).update(
+            Account.objects.filter(id=account_instance.id, user=user).update(
                 balance = F('balance') + Decimal(amount), 
                 date_updated= date.today())
             serializer.save(user=user)
@@ -462,15 +497,19 @@ class BatchCategorizeTransactions(APIView):
                 category_id = Category.objects.get(transaction_category=category, 
                                                         user=self.request.user)
                 transaction_ids = item.get('transaction_Ids')
-                transaction = Transaction.objects.all().filter(id__in=transaction_ids)
+                transaction = Transaction.objects.all().filter(
+                    user=user,
+                    id__in=transaction_ids)
                 transaction.update(
                     transaction_category=category_id)
-                
-                CategoryRule.objects.get_or_create(
-                    transaction_category=category_id,
-                    user=user,
-                    keyword=transaction.first().transaction_notes
-                )
+
+                first_transaction = transaction.first()
+                if first_transaction is not None:
+                    CategoryRule.objects.get_or_create(
+                        transaction_category=category_id,
+                        user=user,
+                        keyword=first_transaction.transaction_notes
+                    )
                 
             return Response(
                 {'Message': 'Categories updated'}, 
@@ -503,7 +542,7 @@ class Assets(APIView):
             {'Message': 'User Not Does not Exist'}, 
             status=status.HTTP_400_BAD_REQUEST)
         
-        asset = Asset.objects.all()
+        asset = Asset.objects.filter(user=self.request.user)
         serializer = AssetSerializer(asset, many=True)
         return Response(
             serializer.data, 
@@ -576,12 +615,13 @@ class Liabilities(APIView):
                 status=status.HTTP_200_OK)
     
     def get(self, request, format=None):
-        if not self.request.user.is_authenticated:
+        user = self.request.user
+        if not user.is_authenticated:
             return Response(
             {'Message': 'User Not Does not Exist'}, 
             status=status.HTTP_400_BAD_REQUEST)
         
-        liability = Liability.objects.all()
+        liability = Liability.objects.filter(user=user)
         serializer = LiabilitySerializer(liability, many=True)
         return Response(
             serializer.data, 
@@ -646,9 +686,9 @@ class NetWorth(APIView):
                 status=status.HTTP_401_UNAUTHORIZED)
         
         total_asset = sum(asset['asset_amount'] 
-                          for asset in Asset.objects.values())
+                          for asset in Asset.objects.values().filter(user=user))
         total_liabilities = sum(liability['liability_amount'] 
-                              for liability in Liability.objects.values())
+                              for liability in Liability.objects.values().filter(user=user))
         
         net_worth = total_asset - total_liabilities
 
