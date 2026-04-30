@@ -144,6 +144,49 @@ class Accounts(APIView):
             serializer.data, 
             status=status.HTTP_200_OK)
 
+    def patch(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_401_UNAUTHORIZED)
+
+        account_id = request.GET.get('id') or request.data.get('id')
+        if not account_id:
+            return Response(
+            {'Message': 'Account id is required'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+
+        account = Account.objects.filter(
+            id=account_id,
+            user=user
+        ).first()
+
+        if account is None:
+            return Response(
+            {'Message': 'Account not found'}, 
+            status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AccountSerializer(
+            account,
+            data=request.data,
+            partial=True
+        )
+
+        if not serializer.is_valid():
+            return Response(
+            serializer.errors, 
+            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(user=user)
+
+        return Response(
+            {
+                'Message': 'Account updated',
+                'account': serializer.data
+            }, 
+            status=status.HTTP_200_OK)
+
 class Transactions(APIView):
     def post(self, request, format=None):
         user = self.request.user
@@ -203,6 +246,49 @@ class Transactions(APIView):
             {'Message': f'{len(transactions)} Deleted'}, 
             status=status.HTTP_200_OK)
     
+    def patch(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'Unauthorized'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        transaction_id = request.GET.get('id') or request.data.get('id')
+        if not transaction_id:
+            return Response(
+                {'Message': 'Transaction id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST)
+
+        transaction = Transaction.objects.filter(
+            id=transaction_id,
+            user=user
+        ).first()
+
+        if transaction is None:
+            return Response(
+                {'Message': 'Transaction not found'}, 
+                status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TransactionSerializer(
+            transaction,
+            data=request.data,
+            partial=True
+        )
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(user=user)
+
+        return Response(
+            {
+                'Message': 'Transaction updated',
+                'transaction': serializer.data
+            }, 
+            status=status.HTTP_200_OK)
+
 class TransactionImport(APIView):
     def post(self, request, format=None):
         user = self.request.user
