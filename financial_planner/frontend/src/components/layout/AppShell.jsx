@@ -34,8 +34,11 @@ function AppShell() {
         <div className="app-shell">
             <aside className="app-sidebar">
                 <div className="app-brand">
-                    <p className="eyebrow">Finance</p>
-                    <h1 className="app-brand__title">Planner</h1>
+                    <span className="app-brand__logo" aria-hidden="true">💸</span>
+                    <div>
+                        <p className="eyebrow">Finance</p>
+                        <h1 className="app-brand__title">Planner</h1>
+                    </div>
                 </div>
                 <nav className="app-nav">
                     {navItems.map((item) => (
