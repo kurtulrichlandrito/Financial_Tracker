@@ -14,7 +14,10 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
     const [refresh, setRefresh] = useState(false)
     const [addedCategory, setAddedCategory] = useState('')
     const apiBase = `/api/categories/?type=${type}`
-    const groupedApi = `/api/get-grouped-transactions/?type=${type}`
+    const groupedApi = `/api/get-grouped-transactions/?${new URLSearchParams({
+        type,
+        orderby: '-transaction_date'
+    }).toString()}`
 
     const handleAddButton = () => {
         apiPost(apiBase, {

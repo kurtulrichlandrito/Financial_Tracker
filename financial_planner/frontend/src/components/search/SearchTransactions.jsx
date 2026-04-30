@@ -17,7 +17,8 @@ function SearchTransactions() {
         account_id: 'all',
         category: 'all',
         type: 'all',
-        date_start: getDatePresetISO('this_month')
+        date_start: getDatePresetISO('this_month'),
+        orderby: '-transaction_date'
     })
     const [filteredTransactions, setFilteredTransactions] = useState([])
     const params = new URLSearchParams()

@@ -11,6 +11,24 @@ from decimal import Decimal
 from datetime import date
 from django.db.models import F, Q, Sum
 
+DEFAULT_TRANSACTION_ORDERING = '-transaction_date'
+TRANSACTION_ORDERING_FIELDS = {
+    'transaction_date',
+}
+
+
+def get_transaction_ordering(request):
+    ordering = request.GET.get('orderby') or request.GET.get('order_by')
+
+    if not ordering:
+        return DEFAULT_TRANSACTION_ORDERING
+
+    field = ordering.removeprefix('-')
+    if field not in TRANSACTION_ORDERING_FIELDS:
+        return DEFAULT_TRANSACTION_ORDERING
+
+    return ordering
+
 # Create your views here.
 class CreateUser(APIView):
     serializer_class = UserSerializer
@@ -158,6 +176,8 @@ class Transactions(APIView):
 
         if transaction_type != 'all':
             transactions = transactions.filter(transaction_type=transaction_type)
+
+        transactions = transactions.order_by(get_transaction_ordering(request))
         
         serializer = TransactionSerializer(transactions, many=True)
         return Response(
@@ -302,7 +322,8 @@ class GetGroupedTransactions(APIView):
         
         transactions = Transaction.objects.all().filter(user=request.user, 
                                                transaction_category=None, 
-                                               transaction_type=transaction_type)
+                                               transaction_type=transaction_type
+                                               ).order_by(get_transaction_ordering(request))
         grouped = {}
         for transaction in transactions:
             key = transaction.transaction_notes.upper().strip()
@@ -469,6 +490,8 @@ class Search(APIView):
         if date_start:
             transactions = transactions.filter(transaction_date__gte=date_start)
 
+        transactions = transactions.order_by(get_transaction_ordering(request))
+
         serializer = TransactionSerializer(transactions, many=True)
         return Response(
             serializer.data, 
@@ -488,7 +511,7 @@ class Reports(APIView):
         account_id = None if account_id in [None, "", "all"] else account_id
         date_start = None if date_start in [None, "", "all"] else date_start 
         
-        transactions = Transaction.objects.all().values().filter(user=user)
+        transactions = Transaction.objects.all().filter(user=user)
         
         if account_id:
             transactions = transactions.filter(account_id=account_id)
@@ -496,13 +519,15 @@ class Reports(APIView):
         if date_start:
             transactions = transactions.filter(transaction_date__gte=date_start)
 
+        transactions = transactions.order_by(get_transaction_ordering(request))
+
         total_expense = transactions.filter(transaction_type='expense'
         ).aggregate(total=Sum('transaction_amount'))['total'] 
 
         total_income = transactions.filter(transaction_type='income'
         ).aggregate(total=Sum('transaction_amount'))['total'] 
         categoryTotals = {}
-        for transaction in transactions:
+        for transaction in transactions.values():
             
             category = Category.objects.filter(
                 id=transaction['transaction_category_id']

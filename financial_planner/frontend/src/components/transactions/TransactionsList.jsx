@@ -10,13 +10,18 @@ function IncomeList({ type, globalRefresh, onRefresh }) {
     const [allSelected, setAllSelected] = useState(false)
 
     useEffect(() => {
-        fetch(`/api/transactions/?type=${type}`, {
+        const params = new URLSearchParams({
+            type,
+            orderby: '-transaction_date'
+        })
+
+        fetch(`/api/transactions/?${params.toString()}`, {
             method: 'GET',
             credentials: 'include'
         })
             .then(response => response.json())
             .then(data => { setTransactions(data) })
-    }, [globalRefresh, refresh])
+    }, [globalRefresh, refresh, type])
 
     const handleDelete = (items) => {
         apiDelete(`/api/transactions/?type=${type}`, { items })

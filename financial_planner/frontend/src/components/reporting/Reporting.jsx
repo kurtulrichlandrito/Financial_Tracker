@@ -18,7 +18,8 @@ function Reports() {
     })
     const [filters, setFilters] = useState({
         account_id: 'all',
-        date_start: getDatePresetISO('this_month')
+        date_start: getDatePresetISO('this_month'),
+        orderby: '-transaction_date'
     })
 
     const params = new URLSearchParams()
