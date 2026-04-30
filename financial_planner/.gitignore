@@ -10,3 +10,4 @@ frontend/dist/
 frontend/node_modules/
 
 NOTES.md
+db.sqlite3
