@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import apiPost from '../../utils/api'
 import '../categories.css'
 
-function NetWorth() {
+function NetWorth({ globalRefresh }) {
     const [assets, setAssets] = useState([])
     const [liabilities, setLiabilities] = useState([])
     const [netWorth, setNetWorth] = useState({})
@@ -36,7 +36,7 @@ function NetWorth() {
         getAssets()
         getLiabilities()
         getNetWorth()
-    }, [])
+    }, [globalRefresh])
 
     return (
         <div className="account-page">

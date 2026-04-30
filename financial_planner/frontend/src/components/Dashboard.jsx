@@ -50,7 +50,7 @@ function Dashboard() {
             .then(d => { if (d.Message === 'Logout Successful') navigate('/login') })
     }
     const reload = () => {
-        setGlobalRefresh(!globalRefresh)
+        setGlobalRefresh((current) => !current)
     }
 
     return (
@@ -76,7 +76,7 @@ function Dashboard() {
             </div>
 
             <Dialog open={!!open.expenseCategory} onClose={() => toggle('expenseCategory', false)}>
-                <CreateTransactionCategory type="expense" onRefresh={reload} />
+                <CreateTransactionCategory type="expense" globalRefresh={globalRefresh} onRefresh={reload} />
             </Dialog>
             <Dialog open={!!open.incomeCategory} onClose={() => toggle('incomeCategory', false)}>
                 <CreateTransactionCategory type="income" globalRefresh={globalRefresh} onRefresh={reload} />
@@ -85,19 +85,19 @@ function Dashboard() {
                 <UploadFiles onRefresh={reload} />
             </Dialog>
             <Dialog open={!!open.asset} onClose={() => toggle('asset', false)}>
-                <CreateAsset />
+                <CreateAsset onRefresh={reload} onClose={() => toggle('asset', false)} />
             </Dialog>
             <Dialog open={!!open.liability} onClose={() => toggle('liability', false)}>
-                <CreateLiability />
+                <CreateLiability onRefresh={reload} onClose={() => toggle('liability', false)} />
             </Dialog>
             <Dialog open={!!open.accounts} onClose={() => toggle('accounts', false)}>
-                <Accounts />
+                <Accounts globalRefresh={globalRefresh} onRefresh={reload} />
             </Dialog>
             <Dialog open={!!open.account} onClose={() => toggle('account', false)}>
-                <CreateAccount />
+                <CreateAccount onRefresh={reload} onClose={() => toggle('account', false)} />
             </Dialog>
             <Dialog open={!!open.netWorth} onClose={() => toggle('netWorth', false)}>
-                <NetWorth />
+                <NetWorth globalRefresh={globalRefresh} />
             </Dialog>
             <Dialog open={!!open.reporting} onClose={() => toggle('reporting', false)}>
                 <Reports />

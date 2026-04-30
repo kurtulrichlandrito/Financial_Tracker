@@ -24,12 +24,17 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
             'transaction_category': transaction_category,
             'transaction_type': type
         })
-            .then((response) => response.json())
-            .then((data) => {
+            .then((response) => response.json()
+                .then((data) => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
                 setMessage(data.Message)
                 setAddedCategory(transaction_category)
-                setTransactionCategory('')
-                getCategories()
+
+                if (ok) {
+                    setTransactionCategory('')
+                    getCategories()
+                    onRefresh?.()
+                }
             })
     }
 
@@ -73,11 +78,15 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
             }))
 
         apiPatch('/api/categorize-transactions/', categorizedData)
-            .then(response => response.json())
-            .then((data) => {
+            .then(response => response.json()
+                .then((data) => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
                 setSubmitMessage(data.Message)
-                setRefresh(!refresh)
-                onRefresh()
+
+                if (ok) {
+                    setRefresh((current) => !current)
+                    onRefresh?.()
+                }
             })
     }
 

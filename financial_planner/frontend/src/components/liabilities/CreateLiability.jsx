@@ -1,15 +1,23 @@
 import { useState } from "react"
 import apiPost from '../../utils/api'
 
-function CreateLiability() {
+function CreateLiability({ onRefresh, onClose }) {
     const [liability_name, setLiabilityName] = useState('')
     const [liability_amount, setLiabilityAmount] = useState('')
     const [message, setMessage] = useState('')
 
     const handleAddButton = () => {
         apiPost('/api/liability/', { liability_name, liability_amount })
-            .then((response) => response.json())
-            .then((data) => setMessage(data.Message))
+            .then((response) => response.json()
+                .then((data) => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                setMessage(data.Message)
+
+                if (ok) {
+                    onRefresh?.()
+                    onClose?.()
+                }
+            })
             .catch()
     }
     return (

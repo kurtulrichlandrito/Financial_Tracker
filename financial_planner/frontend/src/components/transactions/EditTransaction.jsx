@@ -1,27 +1,37 @@
 import { useState, useEffect } from "react"
-import apiPost from '../../utils/api'
-import getDatePresetISO from '../../utils/dateHelper'
+import { apiDelete, apiPatch } from '../../utils/api'
 
-function CreateTransaction({ type, globalRefresh, onRefresh }) {
-    const [asset_name, setAssetName] = useState('')
-    const [asset_amount, setAssetAmount] = useState('')
+
+function EditTransaction({ type, target, onRefresh, onClose }) {
     const [message, setMessage] = useState('')
     const [transaction_categories, setTransactionCategories] = useState([])
     const [accounts, setAccounts] = useState([])
-    const [transactionDetails, setTransactionDetails] = useState({ transaction_type: type })
+    const [transactionDetails, setTransactionDetails] = useState(target || {})
 
-    const handleAddButton = (event) => {
+    const handleUpdateButton = (event) => {
         event.preventDefault()
 
-        apiPost('/api/transactions/', transactionDetails)
-            .then((response) => response.json()
-                .then((data) => ({ ok: response.ok, data })))
-            .then(({ ok, data }) => {
+        apiPatch(`/api/transactions/?id=${target?.id}`, transactionDetails)
+            .then((response) => response.json())
+            .then((data) => {
                 setMessage(data.Message)
 
-                if (ok) {
+                if (data.Message === 'Transaction updated') {
                     onRefresh?.()
+                    onClose?.()
                 }
+            })
+    }
+
+    const handleDeleteButton = (event) => {
+        event.preventDefault()
+
+        apiDelete(`/api/transactions/?type=${type}`, { items: [target?.id] })
+            .then((response) => response.json())
+            .then((data) => {
+                setMessage(data.Message)
+                onRefresh?.()
+                onClose?.()
             })
     }
 
@@ -29,6 +39,10 @@ function CreateTransaction({ type, globalRefresh, onRefresh }) {
         getCategories()
         getAccounts()
     }, [])
+
+    useEffect(() => {
+        setTransactionDetails(target || {})
+    }, [target])
 
     const getAccounts = () => {
         fetch('/api/account', {
@@ -49,13 +63,14 @@ function CreateTransaction({ type, globalRefresh, onRefresh }) {
     }
     return (
         <div className="asset-page">
-            <h1>Add an {type}</h1>
+            <h1>Edit {type}</h1>
 
             <form >
                 <p>Transaction Date</p>
                 <input type="date"
                     min="1999-12-31"
                     max="2099-12-31"
+                    value={transactionDetails.transaction_date || ''}
                     onChange={(e) => {
                         setTransactionDetails((details) =>
                             ({ ...details, transaction_date: e.target.value }))
@@ -66,12 +81,13 @@ function CreateTransaction({ type, globalRefresh, onRefresh }) {
                 <input type="number" onChange={(e) => {
                     setTransactionDetails((details) => ({ ...details, transaction_amount: e.target.value }))
                     setMessage('')
-                }} required />
+                }} required
+                    value={transactionDetails.transaction_amount || ''} />
 
                 <p>Category</p>
                 <select onChange={(e) =>
                     setTransactionDetails((details) => ({ ...details, transaction_category: e.target.value }))}
-                    defaultValue=""
+                    value={transactionDetails.transaction_category || ''}
                     required>
                     <option value="" disabled hidden>Please choose...</option>
                     {transaction_categories.map((category) => (
@@ -89,7 +105,7 @@ function CreateTransaction({ type, globalRefresh, onRefresh }) {
                     setTransactionDetails((details) => ({ ...details, account_id: e.target.value }))
                     setMessage('');
                 }}
-                    defaultValue={""}
+                    value={transactionDetails.account_id || ''}
                     required>
                     <option value="" disabled hidden>Please choose...</option>
                     {accounts.map((account) => (
@@ -104,8 +120,11 @@ function CreateTransaction({ type, globalRefresh, onRefresh }) {
                 <input type="text" onChange={(e) => {
                     setTransactionDetails((details) => ({ ...details, transaction_notes: e.target.value }))
                     setMessage('')
-                }} required />
-                <button type='submit' className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>Add</button>
+                }}
+                    value={transactionDetails.transaction_notes || ''}
+                    required />
+                <button type='submit' className="btn btn-primary w-full justify-center" onClick={handleUpdateButton}>Update</button>
+                <button type='button' className="btn w-full justify-center" onClick={handleDeleteButton}>Delete</button>
             </form>
 
             {message && <p>{message}: {transactionDetails.transaction_date} -
@@ -115,4 +134,4 @@ function CreateTransaction({ type, globalRefresh, onRefresh }) {
 }
 
 
-export default CreateTransaction
+export default EditTransaction

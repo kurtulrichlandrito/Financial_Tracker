@@ -1,15 +1,23 @@
 import { useState } from "react"
 import apiPost from '../../utils/api'
 
-function CreateAsset() {
+function CreateAsset({ onRefresh, onClose }) {
     const [asset_name, setAssetName] = useState('')
     const [asset_amount, setAssetAmount] = useState('')
     const [message, setMessage] = useState('')
 
     const handleAddButton = () => {
         apiPost('/api/asset/', { asset_name, asset_amount })
-            .then((response) => response.json())
-            .then((data) => setMessage(data.Message))
+            .then((response) => response.json()
+                .then((data) => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                setMessage(data.Message)
+
+                if (ok) {
+                    onRefresh?.()
+                    onClose?.()
+                }
+            })
             .catch()
     }
     return (

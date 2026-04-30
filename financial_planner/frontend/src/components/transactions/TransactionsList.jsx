@@ -2,12 +2,16 @@ import { useState, useEffect } from "react"
 import { apiDelete } from "../../utils/api"
 import '../lists.css'
 import CreateTransaction from './CreateTransaction'
+import EditTransaction from "./EditTransaction"
+import Dialog from '@mui/material/Dialog'
 
 function IncomeList({ type, globalRefresh, onRefresh }) {
     const [transactions, setTransactions] = useState([])
     const [refresh, setRefresh] = useState(false)
     const [selected, SetSelected] = useState([])
     const [allSelected, setAllSelected] = useState(false)
+    const [editDialog, setEditDialog] = useState(false)
+    const [transaction, setTransaction] = useState('')
 
     useEffect(() => {
         const params = new URLSearchParams({
@@ -25,8 +29,15 @@ function IncomeList({ type, globalRefresh, onRefresh }) {
 
     const handleDelete = (items) => {
         apiDelete(`/api/transactions/?type=${type}`, { items })
-            .then(response => response.json())
-            .then(data => setRefresh(!refresh))
+            .then(response => response.json()
+                .then((data) => ({ ok: response.ok, data })))
+            .then(({ ok }) => {
+                if (ok) {
+                    setRefresh((current) => !current)
+                    SetSelected([])
+                    onRefresh?.()
+                }
+            })
     }
 
     const handleChange = (id) => {
@@ -46,7 +57,14 @@ function IncomeList({ type, globalRefresh, onRefresh }) {
 
     return (
         <div className="list-section">
-            <CreateTransaction type={type} />
+            <CreateTransaction
+                type={type}
+                globalRefresh={globalRefresh}
+                onRefresh={() => {
+                    setRefresh((current) => !current)
+                    onRefresh?.()
+                }}
+            />
             <h3 className="list-header">All {type}</h3>
             <table className="table-wrapper">
                 <thead>
@@ -60,27 +78,49 @@ function IncomeList({ type, globalRefresh, onRefresh }) {
                                 checked={allSelected}
                                 onChange={() => handleSelectAll()}></input>
                             <button className="btn"
-                                onClick={() => { handleDelete(selected); setAllSelected(false) }}>
+                                onClick={() => {
+                                    handleDelete(selected);
+                                    setAllSelected(false)
+                                }}>
                                 Delete</button>
                         </td>
                     </tr>
                 </thead>
                 <tbody>
                     {transactions.map((transaction) => (
-                        <tr key={transaction.id}>
+                        <tr
+                            onClick={() => {
+                                setEditDialog(true)
+                                setTransaction(transaction)
+
+                            }}
+                            key={transaction.id}>
                             <td>{transaction.transaction_date}</td>
                             <td>{transaction.transaction_amount}</td>
                             <td>{transaction.transaction_category_name}</td>
                             <td>{transaction.transaction_notes}</td>
-                            <td><input type="checkbox"
+                            <td><input
+                                type="checkbox"
                                 value={transaction.id}
                                 checked={selected.includes(transaction.id)}
+                                onClick={(event) => event.stopPropagation()}
                                 onChange={() => handleChange(transaction.id)} />
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+            <Dialog open={editDialog} onClose={() => setEditDialog(false)}>
+                <EditTransaction
+                    type={type}
+                    target={transaction}
+                    onRefresh={() => {
+                        setRefresh((current) => !current)
+                        onRefresh?.()
+                    }}
+                    onClose={() => setEditDialog(false)}
+                />
+            </Dialog>
         </div>
     )
 }

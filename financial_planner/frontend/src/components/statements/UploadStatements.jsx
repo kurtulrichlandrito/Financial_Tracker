@@ -4,16 +4,16 @@ import Dialog from "@mui/material/Dialog"
 import CreateTransactionCategory from "../categories/CreateTransactionCategory"
 import '../global.css'
 
-function UploadFiles({ onRefresh }) {
+function UploadFiles({ onRefresh, target = null }) {
     const [message, setMessage] = useState('')
     const [file, setFile] = useState('')
     const [isExpenseOpen, setIsExpenseOpen] = useState(false)
     const [isIncomeOpen, setIsIncomeOpen] = useState(false)
     const [categorizeButton, setCategorizeButton] = useState(false)
-    const [account, setAccount] = useState({})
+    const [account, setAccount] = useState(target || {})
     const [accounts, setAccounts] = useState([])
 
-    const handleAddButton = () => {
+    const handleAddButton = (event) => {
         event.preventDefault()
         const formData = new FormData()
         formData.append('file', file)
@@ -23,7 +23,7 @@ function UploadFiles({ onRefresh }) {
             .then((response) => {
                 if (response.ok) {
                     setCategorizeButton(true)
-                    onRefresh()
+                    onRefresh?.()
                 }
                 return response.json()
             })
@@ -39,9 +39,13 @@ function UploadFiles({ onRefresh }) {
             .then(data => setAccounts(data))
     }, [])
 
+    useEffect(() => {
+        setAccount(target || {})
+    }, [target])
+
     return (
         <div className="upload-page">
-            <form onSubmit={() => { handleAddButton(); setMessage('Uploading File..') }}>
+            <form onSubmit={(event) => { handleAddButton(event); setMessage('Uploading File..') }}>
                 <h1>Upload Files</h1>
                 <p>Upload CSV from transaction history of accounts</p>
                 <p>*Remove all sensitive information</p>
@@ -52,7 +56,8 @@ function UploadFiles({ onRefresh }) {
                         setMessage('');
                         setCategorizeButton(false)
                     }}
-                        defaultValue={""}>
+                        value={account.id || ""}
+                        disabled={Boolean(target)}>
                         <option value="" disabled hidden>Please choose...</option>
                         {accounts.map((account) => (
                             <option key={account.id}
@@ -85,12 +90,12 @@ function UploadFiles({ onRefresh }) {
 
             {categorizeButton && <button className="btn btn-primary" onClick={() => setIsExpenseOpen(true)}>Categorized Expenses</button>}
             <Dialog open={isExpenseOpen} onClose={() => setIsExpenseOpen(false)}>
-                <CreateTransactionCategory type="expense" />
+                <CreateTransactionCategory type="expense" onRefresh={onRefresh} />
             </Dialog>
 
             {categorizeButton && <button className="btn btn-primary" onClick={() => setIsIncomeOpen(true)}>Categorized Income</button>}
             <Dialog open={isIncomeOpen} onClose={() => setIsIncomeOpen(false)}>
-                <CreateTransactionCategory type="income" />
+                <CreateTransactionCategory type="income" onRefresh={onRefresh} />
             </Dialog>
         </div>
     )

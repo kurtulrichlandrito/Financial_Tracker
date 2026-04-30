@@ -1,25 +1,46 @@
-import { useState } from "react"
-import apiPost from '../../utils/api'
+import { useEffect, useState } from "react"
+import apiPost, { apiPatch } from '../../utils/api'
 import '../categories.css'
 
-function CreateAccount() {
-    const [account_type, setAccountType] = useState('')
-    const [balance, setBalance] = useState('')
-    const [account_nickname, setAccountNickname] = useState('')
+function CreateAccount({ target = null, onRefresh, onClose }) {
+    const isUpdate = Boolean(target?.id)
+    const [account_type, setAccountType] = useState(target?.account_type || '')
+    const [balance, setBalance] = useState(target?.balance || '')
+    const [account_nickname, setAccountNickname] = useState(target?.account_nickname || '')
     const [message, setMessage] = useState('')
 
+    useEffect(() => {
+        setAccountType(target?.account_type || '')
+        setBalance(target?.balance || '')
+        setAccountNickname(target?.account_nickname || '')
+        setMessage('')
+    }, [target])
+
     const handleAddButton = () => {
-        apiPost('/api/account/', { account_type, balance, account_nickname })
-            .then((response) => response.json())
-            .then((data) => setMessage(data.Message))
+        const accountDetails = { account_type, balance, account_nickname }
+        const request = isUpdate
+            ? apiPatch(`/api/account/?id=${target.id}`, accountDetails)
+            : apiPost('/api/account/', accountDetails)
+
+        request
+            .then((response) => response.json()
+                .then((data) => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                setMessage(data.Message)
+
+                if (ok) {
+                    onRefresh?.()
+                    if (isUpdate) onClose?.()
+                }
+            })
             .catch()
     }
     return (
         <div className="account-page">
-            <h1>Add An Account</h1>
+            <h1>{isUpdate ? 'Update Account' : 'Add An Account'}</h1>
             <div className="field">
                 <p>Account Type</p>
-                <select onChange={(e) => { setAccountType(e.target.value); setMessage('') }} defaultValue={''} >
+                <select onChange={(e) => { setAccountType(e.target.value); setMessage('') }} value={account_type} >
                     <option value="" disabled hidden>Please choose...</option>
                     <option value="chequing">Chequing</option>
                     <option value="savings">Savings</option>
@@ -32,7 +53,7 @@ function CreateAccount() {
                 <input type="text" onChange={(e) => {
                     setAccountNickname(e.target.value)
                     setMessage('')
-                }} />
+                }} value={account_nickname} />
             </div>
             <div className="field">
                 <p>Account Number</p>
@@ -43,11 +64,13 @@ function CreateAccount() {
                 <input type="number" onChange={(e) => {
                     setBalance(e.target.value)
                     setMessage('')
-                }} />
+                }} value={balance} />
             </div>
 
 
-            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>Add</button>
+            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>
+                {isUpdate ? 'Update' : 'Add'}
+            </button>
             {message && <p>{message}: {account_nickname} - {account_type}- {balance}</p>}
         </div>
     )
