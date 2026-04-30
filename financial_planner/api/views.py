@@ -53,6 +53,11 @@ class LoginUser(APIView):
         username = request.data.get('username')
         password = request.data.get('password')
 
+        if username and '@' in username:
+            user_by_email = User.objects.filter(email=username).first()
+            if user_by_email:
+                username = user_by_email.username
+
         user = authenticate(request, 
                             username=username, 
                             password=password)

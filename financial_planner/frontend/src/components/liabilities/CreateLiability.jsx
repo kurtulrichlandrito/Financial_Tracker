@@ -35,7 +35,7 @@ function CreateLiability({ onRefresh, onClose }) {
                 setMessage('')
             }} />
 
-            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>Add</button>
+            <button className="button-primary full-width" onClick={handleAddButton}>Add</button>
             {message && <p>{message}: {liability_name} - {currencyFormatter.format(liability_amount || 0)}</p>}
         </div>
     )

@@ -81,11 +81,11 @@ function CreateAccount({ target = null, onRefresh, onClose }) {
             </div>
 
 
-            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>
+            <button className="button-primary full-width" onClick={handleAddButton}>
                 {isUpdate ? 'Update' : 'Add'}
             </button>
             {isUpdate && (
-                <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={handleDeleteButton}>
+                <button className="button-danger full-width" onClick={handleDeleteButton}>
                     Delete
                 </button>
             )}

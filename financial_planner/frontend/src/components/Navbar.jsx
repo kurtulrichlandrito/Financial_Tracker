@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom"
 export default function SideBar() {
     const navigate = useNavigate()
     return (
-        <aside className=" object-right-top absolute" style={{ top: '0px', left: '0px' }}>
+        <aside className="legacy-sidebar">
             <nav>
                 <div>
                     <h1>Nav goes here</h1>

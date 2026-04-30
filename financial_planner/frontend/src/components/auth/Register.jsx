@@ -1,79 +1,124 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import apiPost from "../../utils/api";
-import { useNavigate } from "react-router-dom";
-import '../global.css'
-import '../forms.css'
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import apiPost from "../../utils/api"
+
+const initialForm = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    username: '',
+    password: '',
+    confirmPassword: ''
+}
+
 function Register() {
     const navigate = useNavigate()
-    const [username, setUsername] = useState('')
-    const [password, setPassword] = useState('')
-    const [first_name, setFirstName] = useState('')
-    const [last_name, setLastName] = useState('')
-    const [email, setEmail] = useState('')
+    const [form, setForm] = useState(initialForm)
     const [message, setMessage] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const handleChange = (event) => {
+        const { name, value } = event.target
+
+        setForm((current) => ({
+            ...current,
+            [name]: value
+        }))
+        setMessage('')
+    }
+
+    const handleRegister = (event) => {
+        event.preventDefault()
+
+        if (form.password !== form.confirmPassword) {
+            setMessage('Passwords do not match')
+            return
+        }
+
+        setIsSubmitting(true)
+        const { confirmPassword, ...signupData } = form
+
+        apiPost('/api/signup/', signupData)
+            .then((response) => response.json()
+                .then((data) => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok) {
+                    const firstError = Object.values(data)?.[0]?.[0]
+                    setMessage(data.Message || firstError || 'Unable to create account')
+                    return null
+                }
+
+                return apiPost('/api/login/', {
+                    username: form.username,
+                    password: form.password
+                })
+            })
+            .then((loginResponse) => {
+                if (!loginResponse) return null
+                if (loginResponse.ok) {
+                    navigate('/dashboard')
+                    return null
+                }
+
+                return loginResponse.json()
+            })
+            .then((loginData) => {
+                if (loginData?.Message) setMessage(loginData.Message)
+            })
+            .catch(() => setMessage('Unable to create account. Please try again.'))
+            .finally(() => setIsSubmitting(false))
+    }
 
     return (
         <div className="auth-page">
-            <div className="card auth-card" style={{ maxWidth: 460 }}>
-                <h1>Create Account</h1>
-                <form onSubmit={handleRegister} onChange={() => setMessage('')}>
-                    <div>
-                        <div className="field">
-                            <p>First Name</p>
-                            <input type="text" onChange={(e) => setFirstName(e.target.value)} required />
+            <div className="page-card auth-card auth-card-wide">
+                <p className="eyebrow">Finance Planner</p>
+                <h1 className="auth-title">Create account</h1>
+                <p className="auth-subtitle">Start with a secure account, then build your financial picture.</p>
+
+                <form className="form-stack" onSubmit={handleRegister}>
+                    <div className="form-grid">
+                        <div>
+                            <label>First name</label>
+                            <input type="text" name="first_name" value={form.first_name} onChange={handleChange} required />
                         </div>
-                        <div className="field">
-                            <p>Last Name</p>
-                            <input type="text" onChange={(e) => setLastName(e.target.value)} required />
-                        </div>
-                        <div className="field">
-                            <p>Email</p>
-                            <input type="email" onChange={(e) => setEmail(e.target.value)} required />
-                        </div>
-                        <div className="field">
-                            <p>Username</p>
-                            <input type="text" onChange={(e) => setUsername(e.target.value)} required />
-                        </div>
-                        <div className="field">
-                            <p>Password</p>
-                            <input type="password" onChange={(e) => setPassword(e.target.value)} required />
+                        <div>
+                            <label>Last name</label>
+                            <input type="text" name="last_name" value={form.last_name} onChange={handleChange} required />
                         </div>
                     </div>
-                    <button onClick={handleRegister}
-                        className="btn btn-primary"
-                        style={{
-                            width: '100%',
-                            justifyContent: 'center'
-                        }}
-                    >Register</button>
+                    <div>
+                        <label>Email</label>
+                        <input type="email" name="email" value={form.email} onChange={handleChange} required />
+                    </div>
+                    <div>
+                        <label>Username</label>
+                        <input type="text" name="username" value={form.username} onChange={handleChange} required />
+                    </div>
+                    <div className="form-grid">
+                        <div>
+                            <label>Password</label>
+                            <input type="password" name="password" value={form.password} onChange={handleChange} required />
+                        </div>
+                        <div>
+                            <label>Confirm password</label>
+                            <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} required />
+                        </div>
+                    </div>
 
-                    {message && <p className="msg msg-error">{message}</p>}
-                    <p className="auth-footer">Have an account? <Link to="/login">Login</Link></p>
+                    {message && <p className="form-message">{message}</p>}
+
+                    <button type="submit" className="button-primary" disabled={isSubmitting}>
+                        {isSubmitting ? 'Creating...' : 'Register'}
+                    </button>
                 </form>
-            </div>
 
+                <p className="auth-footer">
+                    Already have an account? <Link className="link" to="/login">Login</Link>
+                </p>
+            </div>
         </div>
     )
-    function handleRegister() {
-        event.preventDefault()
-        apiPost('/api/signup/', { first_name, last_name, email, username, password })
-            .then((response) => {
-
-                if (response.ok) {
-                    navigate('/dashboard')
-                }
-                return response.json()
-            })
-            .then((data) => {
-                if (data.Message) {
-                    setMessage(data.Message)
-                } else {
-                    setMessage(Object.values(data)[0][0])
-                }
-            })
-    }
 }
-
 
 export default Register

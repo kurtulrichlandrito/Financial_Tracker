@@ -159,7 +159,7 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
                                     <option value="add_new">Add new category...</option>
                                 </select>
                                 {addingCategoryFor === key && (
-                                    <div onClick={(e) => e.stopPropagation()}>
+                                    <div className="category-inline-form" onClick={(e) => e.stopPropagation()}>
                                         <input
                                             id="input"
                                             type="text"
@@ -168,20 +168,20 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
                                                 setTransactionCategory(e.target.value)
                                                 setMessage('')
                                             }} />
-                                        <button className="btn"
-                                            onClick={() => handleAddButton(key)}
-                                            style={{ width: '50%', justifyContent: 'center' }}
-                                        >Add
-                                        </button>
-                                        <button className="btn"
-                                            onClick={() => {
-                                                setAddingCategoryFor(null)
-                                                setTransactionCategory('')
-                                                setMessage('')
-                                            }}
-                                            style={{ width: '50%', justifyContent: 'center' }}
-                                        >Cancel
-                                        </button>
+                                        <div className="inline-actions">
+                                            <button className="button-primary"
+                                                onClick={() => handleAddButton(key)}
+                                            >Add
+                                            </button>
+                                            <button className="button-secondary"
+                                                onClick={() => {
+                                                    setAddingCategoryFor(null)
+                                                    setTransactionCategory('')
+                                                    setMessage('')
+                                                }}
+                                            >Cancel
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </td>
@@ -202,8 +202,7 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
             {Object.keys(groupedTransactions).length > 0 ? (
                 <>
                     {submitMessage && <p>{submitMessage}</p>}
-                    <button className="btn btn-primary"
-                        style={{ width: '100%', justifyContent: 'center' }}
+                    <button className="button-primary full-width"
                         onClick={() => { handleSubmit(); }}>Submit</button>
                 </>
             ) : (

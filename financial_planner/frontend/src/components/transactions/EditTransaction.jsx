@@ -124,8 +124,8 @@ function EditTransaction({ type, target, onRefresh, onClose }) {
                 }}
                     value={transactionDetails.transaction_notes || ''}
                     required />
-                <button type='submit' className="btn btn-primary w-full justify-center" onClick={handleUpdateButton}>Update</button>
-                <button type='button' className="btn w-full justify-center" onClick={handleDeleteButton}>Delete</button>
+                <button type='submit' className="button-primary full-width" onClick={handleUpdateButton}>Update</button>
+                <button type='button' className="button-danger full-width" onClick={handleDeleteButton}>Delete</button>
             </form>
 
             {message && <p>{message}: {transactionDetails.transaction_date} -

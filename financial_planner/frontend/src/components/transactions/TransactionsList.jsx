@@ -6,7 +6,7 @@ import EditTransaction from "./EditTransaction"
 import Dialog from '@mui/material/Dialog'
 import currencyFormatter from "../../utils/currencyFormatter"
 
-function IncomeList({ type, globalRefresh, onRefresh }) {
+function IncomeList({ type, globalRefresh, onRefresh, showCreate = true }) {
     const [transactions, setTransactions] = useState([])
     const [refresh, setRefresh] = useState(false)
     const [selected, SetSelected] = useState([])
@@ -58,14 +58,16 @@ function IncomeList({ type, globalRefresh, onRefresh }) {
 
     return (
         <div className="list-section">
-            <CreateTransaction
-                type={type}
-                globalRefresh={globalRefresh}
-                onRefresh={() => {
-                    setRefresh((current) => !current)
-                    onRefresh?.()
-                }}
-            />
+            {showCreate && (
+                <CreateTransaction
+                    type={type}
+                    globalRefresh={globalRefresh}
+                    onRefresh={() => {
+                        setRefresh((current) => !current)
+                        onRefresh?.()
+                    }}
+                />
+            )}
             <h3 className="list-header">All {type}</h3>
             <table className="table-wrapper">
                 <thead>
@@ -78,7 +80,7 @@ function IncomeList({ type, globalRefresh, onRefresh }) {
                             <input type="checkbox"
                                 checked={allSelected}
                                 onChange={() => handleSelectAll()}></input>
-                            <button className="btn"
+                            <button className="button-danger"
                                 onClick={() => {
                                     handleDelete(selected);
                                     setAllSelected(false)

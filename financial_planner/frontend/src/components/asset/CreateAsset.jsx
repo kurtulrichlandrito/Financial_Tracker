@@ -73,7 +73,7 @@ function CreateAsset({ onRefresh, onClose }) {
 
                 <button
                     type="submit"
-                    className="btn btn-primary w-full justify-center"
+                    className="button-primary full-width"
                     disabled={isSubmitting}
                 >
                     {isSubmitting ? 'Adding...' : 'Add'}

@@ -87,11 +87,7 @@ function UploadFiles({ onRefresh, target = null }) {
                         }} />
                     <button
                         type="submit"
-                        className="btn btn-primary"
-                        style={{
-                            width: '100%',
-                            justifyContent: 'center'
-                        }}>
+                        className="button-primary full-width">
                         Upload
                     </button>
                 </div>
@@ -100,12 +96,12 @@ function UploadFiles({ onRefresh, target = null }) {
                 {message && <p>{message}</p>}
             </form>
 
-            {categorizeButton && <button className="btn btn-primary" onClick={() => setIsExpenseOpen(true)}>Categorized Expenses</button>}
+            {categorizeButton && <button className="button-primary" onClick={() => setIsExpenseOpen(true)}>Categorized Expenses</button>}
             <Dialog open={isExpenseOpen} onClose={() => setIsExpenseOpen(false)}>
                 <CreateTransactionCategory type="expense" onRefresh={onRefresh} />
             </Dialog>
 
-            {categorizeButton && <button className="btn btn-primary" onClick={() => setIsIncomeOpen(true)}>Categorized Income</button>}
+            {categorizeButton && <button className="button-primary" onClick={() => setIsIncomeOpen(true)}>Categorized Income</button>}
             <Dialog open={isIncomeOpen} onClose={() => setIsIncomeOpen(false)}>
                 <CreateTransactionCategory type="income" onRefresh={onRefresh} />
             </Dialog>

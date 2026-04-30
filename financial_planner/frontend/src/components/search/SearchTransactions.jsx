@@ -135,7 +135,7 @@ function SearchTransactions() {
                                 <input type="checkbox"
                                     checked={allSelected}
                                     onChange={() => handleSelectAll()}></input>
-                                <button className="btn"
+                                <button className="button-danger"
                                     onClick={() => { handleDelete(selected); setAllSelected(false) }}>
                                     Delete</button>
                             </td>

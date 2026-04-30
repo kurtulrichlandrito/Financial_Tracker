@@ -1,65 +1,81 @@
-/* Category pages */
 .category-page,
 .account-page,
 .asset-page,
 .liability-page {
-  padding: 1.5rem;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  padding: var(--space-6);
   min-width: 500px;
 }
 
-
 .category-table-wrapper {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-top: var(--space-4);
   max-height: 400px;
   overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-top: 1rem;
 }
 
-/* Expandable row */
 .expandable-row {
   cursor: pointer;
 }
 
 .expandable-row:hover {
-  background: #f0f4ff;
+  background: var(--color-primary-50);
 }
 
 .expand-icon {
-  color: var(--muted);
+  color: var(--color-text-muted);
   width: 24px;
 }
 
 .sub-row td {
-  background: #fafbff;
-  font-size: .85rem;
-  color: var(--muted);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.category-inline-form {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .category-footer {
-  display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
 }
 
-/* Upload dialog */
 .upload-page {
-  padding: 1.5rem;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  padding: var(--space-6);
   min-width: 420px;
 }
 
 .upload-note {
-  font-size: .8rem;
-  color: var(--muted);
-  margin-bottom: 1rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-4);
 }
 
 .upload-actions {
-  display: flex;
-  gap: .75rem;
-  margin-top: 1rem;
-  flex-wrap: wrap;
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 600px) {
+  .category-page,
+  .account-page,
+  .asset-page,
+  .liability-page,
+  .upload-page {
+    min-width: 0;
+    width: min(92vw, 520px);
+  }
 }

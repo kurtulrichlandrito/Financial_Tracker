@@ -104,13 +104,13 @@ function EditAssetLiability({ type, target, onRefresh, onClose }) {
 
                 <button
                     type="submit"
-                    className="btn btn-primary w-full justify-center"
+                    className="button-primary full-width"
                     disabled={isSubmitting}>
                     {isSubmitting ? 'Saving...' : 'Update'}
                 </button>
                 <button
                     type="button"
-                    className="btn w-full justify-center"
+                    className="button-danger full-width"
                     disabled={isSubmitting}
                     onClick={handleDeleteButton}>
                     Delete

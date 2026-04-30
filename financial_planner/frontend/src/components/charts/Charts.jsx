@@ -149,20 +149,10 @@ function Charts({ type, globalRefresh }) {
                 </div>
             </div>
 
-            <div className="flex justify-center flex-wrap gap-3.5 m-1 text-xs" >
+            <div className="legend-row" >
                 {chartData.map((item) => (
-                    <span key={item.id} style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem'
-                    }}>
-                        <span style={{
-                            width: '10px',
-                            height: '10px',
-                            borderRadius: '50%',
-                            backgroundColor: item.color,
-                            display: 'inline-block'
-                        }} />
+                    <span key={item.id} className="legend-item">
+                        <span className="legend-dot" style={{ backgroundColor: item.color }} />
                         {item.label}
                     </span>
                 ))}

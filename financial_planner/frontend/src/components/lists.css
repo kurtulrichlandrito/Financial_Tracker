@@ -1,15 +1,15 @@
-/* Shared list/table styles */
 .list-section {
   margin-bottom: 1.5rem;
-  height: 700px;
-  overflow-y: scroll;
+  max-height: 700px;
+  overflow-y: auto;
 }
 
 .list-header {
-  display: flex;
   align-items: center;
+  color: var(--color-text-primary);
+  display: flex;
   justify-content: space-between;
-  margin-bottom: .75rem;
+  margin-bottom: var(--space-3);
 }
 
 .list-header h3 {
@@ -17,14 +17,14 @@
 }
 
 .table-wrapper {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   overflow-x: auto;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
 }
 
 .empty-state {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  padding: var(--space-8);
   text-align: center;
-  padding: 2rem;
-  color: var(--muted);
-  font-size: .9rem;
 }

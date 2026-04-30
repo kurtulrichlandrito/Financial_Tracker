@@ -106,7 +106,7 @@ function CreateTransaction({ type, globalRefresh, onRefresh }) {
                     setTransactionDetails((details) => ({ ...details, transaction_notes: e.target.value }))
                     setMessage('')
                 }} required />
-                <button type='submit' className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>Add</button>
+                <button type='submit' className="button-primary full-width" onClick={handleAddButton}>Add</button>
             </form>
 
             {message && <p>{message}: {transactionDetails.transaction_date} -
