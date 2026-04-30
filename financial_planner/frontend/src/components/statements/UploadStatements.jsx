@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import fileApiPost from "../../utils/fileapi"
 import Dialog from "@mui/material/Dialog"
 import CreateTransactionCategory from "../categories/CreateTransactionCategory"
+import CreateAccount from "../accounts/CreateAccount"
 import '../global.css'
 
 function UploadFiles({ onRefresh, target = null }) {
@@ -9,6 +10,7 @@ function UploadFiles({ onRefresh, target = null }) {
     const [file, setFile] = useState('')
     const [isExpenseOpen, setIsExpenseOpen] = useState(false)
     const [isIncomeOpen, setIsIncomeOpen] = useState(false)
+    const [isAccountOpen, setIsAccountOpen] = useState(false)
     const [categorizeButton, setCategorizeButton] = useState(false)
     const [account, setAccount] = useState(target || {})
     const [accounts, setAccounts] = useState([])
@@ -30,13 +32,17 @@ function UploadFiles({ onRefresh, target = null }) {
             .then((data) => { setMessage(data.Message) })
     }
 
-    useEffect(() => {
+    const getAccounts = () => {
         fetch('/api/account', {
             method: 'GET',
             credentials: 'include',
         })
             .then(response => response.json())
             .then(data => setAccounts(data))
+    }
+
+    useEffect(() => {
+        getAccounts()
     }, [])
 
     useEffect(() => {
@@ -52,6 +58,11 @@ function UploadFiles({ onRefresh, target = null }) {
                 <div className="upload-actions">
                     <p>Choose Account</p>
                     <select className="field" onChange={(e) => {
+                        if (e.target.value === 'add_new') {
+                            setIsAccountOpen(true)
+                            return
+                        }
+
                         setAccount(accounts.find(account => account.id == e.target.value))
                         setMessage('');
                         setCategorizeButton(false)
@@ -65,6 +76,7 @@ function UploadFiles({ onRefresh, target = null }) {
                                 {account.account_nickname} ({account.account_type})
                             </option>
                         ))}
+                        {!target && <option value="add_new">Add new account...</option>}
                     </select>
                     <input type="file"
                         accept=".csv"
@@ -96,6 +108,16 @@ function UploadFiles({ onRefresh, target = null }) {
             {categorizeButton && <button className="btn btn-primary" onClick={() => setIsIncomeOpen(true)}>Categorized Income</button>}
             <Dialog open={isIncomeOpen} onClose={() => setIsIncomeOpen(false)}>
                 <CreateTransactionCategory type="income" onRefresh={onRefresh} />
+            </Dialog>
+
+            <Dialog open={isAccountOpen} onClose={() => setIsAccountOpen(false)}>
+                <CreateAccount
+                    onRefresh={() => {
+                        getAccounts()
+                        onRefresh?.()
+                    }}
+                    onClose={() => setIsAccountOpen(false)}
+                />
             </Dialog>
         </div>
     )

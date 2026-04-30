@@ -3,6 +3,7 @@ import '../categories.css'
 import Dialog from '@mui/material/Dialog'
 import CreateAccount from "./CreateAccount"
 import UploadFiles from "../statements/UploadStatements"
+import currencyFormatter from "../../utils/currencyFormatter"
 
 function Accounts({ globalRefresh, onRefresh }) {
     const [open, setOpen] = useState({})
@@ -48,7 +49,7 @@ function Accounts({ globalRefresh, onRefresh }) {
                     return <div key={account.id} style={{ padding: '1rem' }}>
                         <h4>{account.account_nickname}</h4>
                         <p>{account.account_type} - AccountNumber(to add)</p>
-                        <h4>${account.balance}</h4>
+                        <h4>{currencyFormatter.format(account.balance)}</h4>
                         <p>{account.account_type !== 'credit' ? 'Current balance' : 'Outstanding Balance'}</p>
                         <p>Monthly Spending: </p>
                         <p>Date updated:{account.date_updated ? account.date_updated : 'N/A'} </p>

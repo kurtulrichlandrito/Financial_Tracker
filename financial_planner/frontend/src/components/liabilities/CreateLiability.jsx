@@ -1,5 +1,6 @@
 import { useState } from "react"
 import apiPost from '../../utils/api'
+import currencyFormatter from "../../utils/currencyFormatter"
 
 function CreateLiability({ onRefresh, onClose }) {
     const [liability_name, setLiabilityName] = useState('')
@@ -35,7 +36,7 @@ function CreateLiability({ onRefresh, onClose }) {
             }} />
 
             <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>Add</button>
-            {message && <p>{message}: {liability_name} - {liability_amount}</p>}
+            {message && <p>{message}: {liability_name} - {currencyFormatter.format(liability_amount || 0)}</p>}
         </div>
     )
 }

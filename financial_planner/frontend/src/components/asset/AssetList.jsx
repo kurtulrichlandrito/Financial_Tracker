@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react"
+import Dialog from '@mui/material/Dialog'
+import EditAssetLiability from "../networth/EditAssetLiability"
+import currencyFormatter from "../../utils/currencyFormatter"
 
 function AssetList({ globalRefresh, onRefresh }) {
-    const [state, setState] = useState('')
     const [assets, setAssets] = useState([])
+    const [refresh, setRefresh] = useState(false)
+    const [selectedAsset, setSelectedAsset] = useState(null)
+    const [editDialog, setEditDialog] = useState(false)
 
     useEffect(() => {
         fetch('/api/asset/', {
@@ -11,7 +16,13 @@ function AssetList({ globalRefresh, onRefresh }) {
         })
             .then(response => response.json())
             .then(data => { setAssets(data) })
-    }, [globalRefresh])
+    }, [globalRefresh, refresh])
+
+    const refreshAssets = () => {
+        setRefresh((current) => !current)
+        onRefresh?.()
+    }
+
     return (
         <div>
             <h3>All Asset</h3>
@@ -25,13 +36,26 @@ function AssetList({ globalRefresh, onRefresh }) {
                 </thead>
                 <tbody>
                     {assets.map((asset) => (
-                        <tr key={asset.id}>
+                        <tr
+                            key={asset.id}
+                            onClick={() => {
+                                setSelectedAsset(asset)
+                                setEditDialog(true)
+                            }}>
                             <td>{asset.asset_name}</td>
-                            <td>{asset.asset_amount}</td>
+                            <td>{currencyFormatter.format(asset.asset_amount)}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+            <Dialog open={editDialog} onClose={() => setEditDialog(false)}>
+                <EditAssetLiability
+                    type="asset"
+                    target={selectedAsset}
+                    onRefresh={refreshAssets}
+                    onClose={() => setEditDialog(false)}
+                />
+            </Dialog>
         </div>
     )
 }

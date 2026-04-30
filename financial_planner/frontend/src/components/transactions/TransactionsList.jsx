@@ -4,6 +4,7 @@ import '../lists.css'
 import CreateTransaction from './CreateTransaction'
 import EditTransaction from "./EditTransaction"
 import Dialog from '@mui/material/Dialog'
+import currencyFormatter from "../../utils/currencyFormatter"
 
 function IncomeList({ type, globalRefresh, onRefresh }) {
     const [transactions, setTransactions] = useState([])
@@ -96,7 +97,7 @@ function IncomeList({ type, globalRefresh, onRefresh }) {
                             }}
                             key={transaction.id}>
                             <td>{transaction.transaction_date}</td>
-                            <td>{transaction.transaction_amount}</td>
+                            <td>{currencyFormatter.format(transaction.transaction_amount)}</td>
                             <td>{transaction.transaction_category_name}</td>
                             <td>{transaction.transaction_notes}</td>
                             <td><input

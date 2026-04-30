@@ -187,6 +187,22 @@ class Accounts(APIView):
             }, 
             status=status.HTTP_200_OK)
 
+    def delete(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_401_UNAUTHORIZED)
+
+        account_ids = request.data.get('items') or []
+        accounts = Account.objects.filter(user=user, id__in=account_ids)
+        deleted_count = accounts.count()
+        accounts.delete()
+
+        return Response(
+            {'Message': f'{deleted_count} Deleted'}, 
+            status=status.HTTP_200_OK)
+
 class Transactions(APIView):
     def post(self, request, format=None):
         user = self.request.user
@@ -457,6 +473,7 @@ class BatchCategorizeTransactions(APIView):
 
 class Assets(APIView):
     serializer_class = AssetSerializer
+
     def post(self, request, format=None):
         serializer = AssetSerializer(data=request.data)
         user = self.request.user
@@ -485,7 +502,56 @@ class Assets(APIView):
         serializer = AssetSerializer(asset, many=True)
         return Response(
             serializer.data, 
-            status=status.HTTP_200_OK)        
+            status=status.HTTP_200_OK)
+
+    def patch(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_401_UNAUTHORIZED)
+
+        asset_id = request.GET.get('id') or request.data.get('id')
+        if not asset_id:
+            return Response(
+            {'Message': 'Asset id is required'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+
+        asset = Asset.objects.filter(id=asset_id, user=user).first()
+        if asset is None:
+            return Response(
+            {'Message': 'Asset not found'}, 
+            status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AssetSerializer(asset, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(
+            serializer.errors, 
+            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(user=user)
+        return Response(
+            {
+                'Message': 'Asset updated',
+                'asset': serializer.data
+            }, 
+            status=status.HTTP_200_OK)
+
+    def delete(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_401_UNAUTHORIZED)
+
+        asset_ids = request.data.get('items') or []
+        assets = Asset.objects.filter(user=user, id__in=asset_ids)
+        deleted_count = assets.count()
+        assets.delete()
+
+        return Response(
+            {'Message': f'{deleted_count} Deleted'}, 
+            status=status.HTTP_200_OK)
                 
 class Liabilities(APIView):
     serializer_class = LiabilitySerializer
@@ -514,6 +580,55 @@ class Liabilities(APIView):
         serializer = LiabilitySerializer(liability, many=True)
         return Response(
             serializer.data, 
+            status=status.HTTP_200_OK)
+
+    def patch(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_401_UNAUTHORIZED)
+
+        liability_id = request.GET.get('id') or request.data.get('id')
+        if not liability_id:
+            return Response(
+            {'Message': 'Liability id is required'}, 
+            status=status.HTTP_400_BAD_REQUEST)
+
+        liability = Liability.objects.filter(id=liability_id, user=user).first()
+        if liability is None:
+            return Response(
+            {'Message': 'Liability not found'}, 
+            status=status.HTTP_404_NOT_FOUND)
+
+        serializer = LiabilitySerializer(liability, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(
+            serializer.errors, 
+            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(user=user)
+        return Response(
+            {
+                'Message': 'Liability updated',
+                'liability': serializer.data
+            }, 
+            status=status.HTTP_200_OK)
+
+    def delete(self, request, format=None):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+            {'Message': 'User Not Does not Exist'}, 
+            status=status.HTTP_401_UNAUTHORIZED)
+
+        liability_ids = request.data.get('items') or []
+        liabilities = Liability.objects.filter(user=user, id__in=liability_ids)
+        deleted_count = liabilities.count()
+        liabilities.delete()
+
+        return Response(
+            {'Message': f'{deleted_count} Deleted'}, 
             status=status.HTTP_200_OK)
 
 class NetWorth(APIView):
@@ -612,19 +727,25 @@ class Reports(APIView):
 
         total_income = transactions.filter(transaction_type='income'
         ).aggregate(total=Sum('transaction_amount'))['total'] 
-        categoryTotals = {}
+        expenseCategoryTotals = {}
+        incomeCategoryTotals = {}
         for transaction in transactions.values():
             
             category = Category.objects.filter(
                 id=transaction['transaction_category_id']
                 ).values_list('transaction_category', flat=True).first()
 
-            categoryTotals[category] = (categoryTotals.get(category, 0) 
-            + transaction['transaction_amount'])
+            if transaction['transaction_type'] == 'expense':
+                expenseCategoryTotals[category] = (expenseCategoryTotals.get(category, 0) 
+                + transaction['transaction_amount'])
+            elif transaction['transaction_type'] == 'income':
+                incomeCategoryTotals[category] = (incomeCategoryTotals.get(category, 0) 
+                + transaction['transaction_amount'])
 
         data = {'total_expense' : total_expense, 
                 'total_income': total_income,
-                'categoryTotals': categoryTotals}
+                'expenseCategoryTotals': expenseCategoryTotals,
+                'incomeCategoryTotals': incomeCategoryTotals}
         
         return Response(data, 
             status=status.HTTP_200_OK) 

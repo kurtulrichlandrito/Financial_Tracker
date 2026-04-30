@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { apiPost, apiPatch } from '../../utils/api'
 import '../global.css'
 import '../categories.css'
+import currencyFormatter from '../../utils/currencyFormatter'
 function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
     const [transaction_category, setTransactionCategory] = useState('')
     const [message, setMessage] = useState('')
@@ -190,7 +191,7 @@ function CreateTransactionCategory({ type, globalRefresh, onRefresh }) {
                                 <td></td>
                                 <td>{transaction.transaction_notes}</td>
                                 <td>{transaction.transaction_date}</td>
-                                <td>{transaction.transaction_amount}</td>
+                                <td>{currencyFormatter.format(transaction.transaction_amount)}</td>
 
                             </tr>
                         ))}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { apiDelete, apiPatch } from '../../utils/api'
+import currencyFormatter from "../../utils/currencyFormatter"
 
 
 function EditTransaction({ type, target, onRefresh, onClose }) {
@@ -128,7 +129,7 @@ function EditTransaction({ type, target, onRefresh, onClose }) {
             </form>
 
             {message && <p>{message}: {transactionDetails.transaction_date} -
-                {type} - {transactionDetails.transaction_amount}  </p>}
+                {type} - {currencyFormatter.format(transactionDetails.transaction_amount || 0)}  </p>}
         </div>
     )
 }

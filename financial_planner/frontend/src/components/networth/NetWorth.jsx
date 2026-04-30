@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import apiPost from '../../utils/api'
 import '../categories.css'
+import currencyFormatter from '../../utils/currencyFormatter'
 
 function NetWorth({ globalRefresh }) {
     const [assets, setAssets] = useState([])
@@ -54,9 +55,9 @@ function NetWorth({ globalRefresh }) {
                     </thead>
                     <tbody>
                         <tr>
-                            <td>{netWorth.net_worth}</td>
-                            <td>{netWorth.total_assets}</td>
-                            <td>{netWorth.total_liabilities}</td>
+                            <td>{currencyFormatter.format(netWorth.net_worth || 0)}</td>
+                            <td>{currencyFormatter.format(netWorth.total_assets || 0)}</td>
+                            <td>{currencyFormatter.format(netWorth.total_liabilities || 0)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -76,7 +77,7 @@ function NetWorth({ globalRefresh }) {
                         {assets.map((asset) => {
                             return <tr key={asset.id} className="text-center">
                                 <td><h4>{asset.asset_name}</h4></td>
-                                <td><h4>{asset.asset_amount}</h4></td>
+                                <td><h4>{currencyFormatter.format(asset.asset_amount)}</h4></td>
                             </tr>
                         })}
                     </tbody>
@@ -94,7 +95,7 @@ function NetWorth({ globalRefresh }) {
                         {liabilities.map((liability) => {
                             return <tr key={liability.id} className="text-center">
                                 <td><h4>{liability.liability_name}</h4></td>
-                                <td><h4>-{liability.liability_amount}</h4></td>
+                                <td><h4>{currencyFormatter.format(-liability.liability_amount)}</h4></td>
                             </tr>
                         })}
                     </tbody>

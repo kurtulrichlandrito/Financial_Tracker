@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import apiPost from '../../utils/api'
 import getDatePresetISO from '../../utils/dateHelper'
+import currencyFormatter from "../../utils/currencyFormatter"
 
 function CreateTransaction({ type, globalRefresh, onRefresh }) {
     const [asset_name, setAssetName] = useState('')
@@ -109,7 +110,7 @@ function CreateTransaction({ type, globalRefresh, onRefresh }) {
             </form>
 
             {message && <p>{message}: {transactionDetails.transaction_date} -
-                {type} - {transactionDetails.transaction_amount}  </p>}
+                {type} - {currencyFormatter.format(transactionDetails.transaction_amount || 0)}  </p>}
         </div>
     )
 }

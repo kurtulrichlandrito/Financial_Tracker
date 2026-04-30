@@ -4,6 +4,7 @@ import '../categories.css'
 import getDatePresetISO from '../../utils/dateHelper'
 import '../lists.css'
 import TransactionsList from '../transactions/TransactionsList'
+import currencyFormatter from '../../utils/currencyFormatter'
 
 function SearchTransactions() {
     const [transactionCategories, setTransactionCategories] = useState([])
@@ -144,7 +145,7 @@ function SearchTransactions() {
                         {filteredTransactions.map((transaction) => (
                             <tr key={transaction.id}>
                                 <td>{transaction.transaction_date}</td>
-                                <td>{transaction.transaction_amount}</td>
+                                <td>{currencyFormatter.format(transaction.transaction_amount)}</td>
                                 <td>{transaction.transaction_category}</td>
                                 <td>{transaction.transaction_notes}</td>
                                 <td><input type="checkbox"

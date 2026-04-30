@@ -1,5 +1,6 @@
 import { useState } from "react"
 import apiPost from '../../utils/api'
+import currencyFormatter from "../../utils/currencyFormatter"
 
 const initialAsset = {
     asset_name: '',
@@ -79,7 +80,7 @@ function CreateAsset({ onRefresh, onClose }) {
                 </button>
             </form>
 
-            {message && <p>{message}: {asset.asset_name} - {asset.asset_amount}</p>}
+            {message && <p>{message}: {asset.asset_name} - {currencyFormatter.format(asset.asset_amount || 0)}</p>}
         </div>
     )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
-import apiPost, { apiPatch } from '../../utils/api'
+import apiPost, { apiDelete, apiPatch } from '../../utils/api'
 import '../categories.css'
+import currencyFormatter from "../../utils/currencyFormatter"
 
 function CreateAccount({ target = null, onRefresh, onClose }) {
     const isUpdate = Boolean(target?.id)
@@ -35,6 +36,22 @@ function CreateAccount({ target = null, onRefresh, onClose }) {
             })
             .catch()
     }
+
+    const handleDeleteButton = () => {
+        apiDelete('/api/account/', { items: [target?.id] })
+            .then((response) => response.json()
+                .then((data) => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                setMessage(data.Message)
+
+                if (ok) {
+                    onRefresh?.()
+                    onClose?.()
+                }
+            })
+            .catch()
+    }
+
     return (
         <div className="account-page">
             <h1>{isUpdate ? 'Update Account' : 'Add An Account'}</h1>
@@ -56,10 +73,6 @@ function CreateAccount({ target = null, onRefresh, onClose }) {
                 }} value={account_nickname} />
             </div>
             <div className="field">
-                <p>Account Number</p>
-                <input type="text" placeholder="To be implemented" />
-            </div>
-            <div className="field">
                 <p>Current Balance</p>
                 <input type="number" onChange={(e) => {
                     setBalance(e.target.value)
@@ -71,7 +84,12 @@ function CreateAccount({ target = null, onRefresh, onClose }) {
             <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddButton}>
                 {isUpdate ? 'Update' : 'Add'}
             </button>
-            {message && <p>{message}: {account_nickname} - {account_type}- {balance}</p>}
+            {isUpdate && (
+                <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={handleDeleteButton}>
+                    Delete
+                </button>
+            )}
+            {message && <p>{message}: {account_nickname} - {account_type}- {currencyFormatter.format(balance || 0)}</p>}
         </div>
     )
 }
