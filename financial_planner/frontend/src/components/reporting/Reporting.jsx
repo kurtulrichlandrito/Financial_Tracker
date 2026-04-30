@@ -11,26 +11,28 @@ function Reports() {
     const [accounts, setAccounts] = useState([])
     const [allSelected, setAllSelected] = useState(false)
     const [selected, SetSelected] = useState([])
+    const [reportData, setReportData] = useState({
+        total_expense: 0,
+        total_income: 0,
+        categoryTotals: {}
+    })
     const [filters, setFilters] = useState({
-        type: 'all',
+        account_id: 'all',
         date_start: getDatePresetISO('this_month')
     })
+
     const params = new URLSearchParams()
     useEffect(() => {
         getAccounts()
-        getCategories()
     }, [])
 
-
-    const getCategories = () => {
-        fetch('/api/reports/', {
-            method: 'GET',
-            credentials: 'include'
+    const resetData = () => {
+        setReportData({
+            total_expense: 0,
+            total_income: 0,
+            categoryTotals: {}
         })
-            .then((response) => response.json())
-            .then((data) => {
-                setTransactionCategories(data)
-            })
+
     }
 
     const getAccounts = () => {
@@ -42,14 +44,23 @@ function Reports() {
             .then((data) => setAccounts(data))
     }
 
+    const getCategories = () => {
+        fetch('/api/categories/', {
+            method: 'GET',
+            credentials: 'include'
+        })
+            .then(response => response.json())
+            .then(data => setTransactionCategories(data))
+    }
+
     const handleSearch = () => {
         const params = new URLSearchParams(filters)
-        fetch(`/api/search?${params.toString()}`, {
+        fetch(`/api/reports/?${params.toString()}`, {
             method: 'GET',
             credentials: 'include'
         })
             .then((response) => response.json())
-            .then((data) => { setFilteredTransactions(data); console.log(data) })
+            .then((data) => { setReportData(data); console.log(data) })
     }
     const handleSelectAll = () => {
         if (allSelected) {
@@ -65,9 +76,15 @@ function Reports() {
         <div className="account-page">
             <h1>Reports</h1>
             <p>Date</p>
-            <select onChange={(e) => { setFilters((filter) => ({ ...filter, date_start: e.target.value })) }}>
-                <option value={getDatePresetISO('this_month')}>This Month</option>
-                <option value={getDatePresetISO('last_month')}>Last Month</option>
+            <select onChange={(e) => {
+                resetData()
+                setFilters((filter) => ({ ...filter, date_start: e.target.value }))
+            }}>
+                <option value={getDatePresetISO('this_month')}>
+                    {new Date(new Date().setMonth(new Date().getMonth()))
+                        .toLocaleString('default', { month: 'long', year: 'numeric' })}</option>
+                <option value={getDatePresetISO('last_month')}>{new Date(new Date().setMonth(new Date().getMonth() - 1))
+                    .toLocaleString('default', { month: 'long', year: 'numeric' })}</option>
                 <option value={getDatePresetISO('last_3_months')}>Last 3 Months</option>
                 <option value={getDatePresetISO('this_year')}>This Year</option>
                 <option value="">Custom Range</option>
@@ -76,15 +93,37 @@ function Reports() {
             <p>Accounts</p>
             <select defaultValue={"all"}
                 onChange={(e) => {
-                    setFilteredTransactions([])
-                    setFilters((filter) => ({ ...filter, account: e.target.value }))
+                    resetData()
+                    setFilters((filter) => ({ ...filter, account_id: e.target.value }))
                 }}>
                 <option value="all" >All Accounts</option>
+
                 {accounts.map((account) => {
                     return <option key={account.id} value={account.id}>{account.account_nickname}</option>
                 })}
             </select>
-            <button onClick={() => getCategories()}>asdfa</button>
+            <button onClick={() => handleSearch()}>Click</button>
+            <h3>Total Expenses</h3>
+            <p>{reportData.total_expense}</p>
+            <h3>Total Income</h3>
+            <p>{reportData.total_income}</p>
+            <div className="list-section">
+                <table className="table-wrapper">
+                    <thead>
+                        <tr>
+                            <td>Category Totals</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {Object.entries(reportData.categoryTotals).map(([category, total]) =>
+                        (<tr>
+                            <td>{category === "null" ? "Uncategorized" : category}</td>
+                            <td>{total}</td>
+                        </tr>)
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     )
 }

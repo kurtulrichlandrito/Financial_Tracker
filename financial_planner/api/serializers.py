@@ -119,10 +119,16 @@ class NetWorthSerializer(serializers.Serializer):
 class TransactionSerializer(ModelSerializer):
     transaction_category = serializers.PrimaryKeyRelatedField(
             queryset=Category.objects.all(),
+            required=False,
+            allow_null=True
         )
     account_id = serializers.PrimaryKeyRelatedField(
         queryset=Account.objects.all(),
         source='account'
+    )
+    transaction_category_name = serializers.CharField(
+        source='transaction_category.transaction_category',
+        read_only=True
     )
 
     class Meta:
@@ -131,6 +137,7 @@ class TransactionSerializer(ModelSerializer):
                   'id',
                   'transaction_date',
                   'transaction_category',
+                  'transaction_category_name',
                   'transaction_amount',
                   'transaction_notes',
                   'account_id',

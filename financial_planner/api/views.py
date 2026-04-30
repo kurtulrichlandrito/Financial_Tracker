@@ -210,11 +210,11 @@ class TransactionImport(APIView):
         has_duplicate = False
         for transaction in data:
             transaction['account_id'] = account['id']
-            print(transaction)
             serializer = TransactionSerializer(data=transaction)
             if not serializer.is_valid():
                 has_invalid = True
                 continue
+
             exists = Transaction.objects.filter(
             user=user,
             **transaction
@@ -246,7 +246,6 @@ class TransactionImport(APIView):
 class Categories(APIView):
     serializer_class = CategorySerializer
     def post(self, request, format=None):
-        print(request.data)
         serializer = CategorySerializer(data=request.data)
         user = self.request.user
         if not user.is_authenticated:
@@ -483,14 +482,40 @@ class Reports(APIView):
                 {'Message': 'User Not Does not Exist'}, 
                 status=status.HTTP_401_UNAUTHORIZED)
         
-        account 
-        total_expense = Transaction.objects.filter(
-        user=request.user,
-        transaction_type='expense'
+        account_id = self.request.GET.get('account_id')
+        date_start = self.request.GET.get('date_start')
+        
+        account_id = None if account_id in [None, "", "all"] else account_id
+        date_start = None if date_start in [None, "", "all"] else date_start 
+        
+        transactions = Transaction.objects.all().values().filter(user=user)
+        
+        if account_id:
+            transactions = transactions.filter(account_id=account_id)
+
+        if date_start:
+            transactions = transactions.filter(transaction_date__gte=date_start)
+
+        total_expense = transactions.filter(transaction_type='expense'
         ).aggregate(total=Sum('transaction_amount'))['total'] 
-        total_income = Transaction.objects.filter(
-        user=request.user,
-        transaction_type='income'
+
+        total_income = transactions.filter(transaction_type='income'
         ).aggregate(total=Sum('transaction_amount'))['total'] 
+        categoryTotals = {}
+        for transaction in transactions:
+            
+            category = Category.objects.filter(
+                id=transaction['transaction_category_id']
+                ).values_list('transaction_category', flat=True).first()
+
+            categoryTotals[category] = (categoryTotals.get(category, 0) 
+            + transaction['transaction_amount'])
+
+        data = {'total_expense' : total_expense, 
+                'total_income': total_income,
+                'categoryTotals': categoryTotals}
+        
+        return Response(data, 
+            status=status.HTTP_200_OK) 
 
         

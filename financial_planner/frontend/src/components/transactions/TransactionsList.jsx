@@ -65,7 +65,7 @@ function IncomeList({ type, globalRefresh, onRefresh }) {
                         <tr key={transaction.id}>
                             <td>{transaction.transaction_date}</td>
                             <td>{transaction.transaction_amount}</td>
-                            <td>{transaction.transaction_category}</td>
+                            <td>{transaction.transaction_category_name}</td>
                             <td>{transaction.transaction_notes}</td>
                             <td><input type="checkbox"
                                 value={transaction.id}
