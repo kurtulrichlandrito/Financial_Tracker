@@ -243,6 +243,19 @@ class Transactions(APIView):
         ownership_error = validate_transaction_relationships(serializer, user)
         if ownership_error:
             return ownership_error
+        
+        account_id = request.GET.get('account_id') or request.data.get('account_id')
+        account_instance = Account.objects.filter(
+            id=account_id,
+            user=user
+        ).first()
+        amount = (request.data.get('transaction_amount') or
+            request.GET.get('transaction_amount'))
+        
+        Account.objects.filter(id=account_instance.id, user=user).update(
+            balance = F('balance') + Decimal(amount), 
+            date_updated= date.today())
+        serializer.save(user=user)
 
         serializer.save(user=user)
         return Response(
