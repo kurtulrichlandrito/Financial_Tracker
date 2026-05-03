@@ -17,9 +17,17 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
-environ.Env.read_env(BASE_DIR / '.env')
+
+env_file = BASE_DIR / '.env'
+if not env_file.exists():
+    env_file = BASE_DIR / '.env.development'
+environ.Env.read_env(env_file)
+
 FRONTEND_DIST = BASE_DIR / 'frontend' / 'dist'
 IS_RAILWAY = env('RAILWAY_ENVIRONMENT', default=None) is not None
+PLAID_ENV = env("PLAID_ENV", default="Sandbox")
+PLAID_CLIENT_ID = env("PLAID_CLIENT_ID")
+PLAID_SECRET = env("PLAID_SECRET")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -29,6 +37,7 @@ SECRET_KEY = env(
     'SECRET_KEY',
     default='django-insecure-%vn81vq#!+((1%19$#8*4+-o=vu2l03a69w3exdxizoq7hguv!'
 )
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=not IS_RAILWAY)

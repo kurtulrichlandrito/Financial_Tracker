@@ -10,6 +10,20 @@ import json
 from decimal import Decimal
 from datetime import date
 from django.db.models import F, Q, Sum
+import plaid
+from plaid.api import plaid_api
+from plaid.model.link_token_create_request import LinkTokenCreateRequest
+from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
+from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
+import os
+from django.conf import settings
+from plaid.model.products import Products
+from plaid.model.country_code import CountryCode
+
+
+PLAID_CLIENT_ID = os.getenv('PLAID_CLIENT_ID')
+PLAID_SECRET = os.getenv('PLAID_SECRET')
+PLAID_ENV = os.getenv('PLAID_ENV')
 
 DEFAULT_TRANSACTION_ORDERING = '-transaction_date'
 TRANSACTION_ORDERING_FIELDS = {
@@ -126,26 +140,6 @@ class Accounts(APIView):
             return Response(
             {'Message': 'Account Already Exists'}, 
                         status=status.HTTP_400_BAD_REQUEST)
-        
-        if request.data.get('account_type') == 'credit':
-            liability = {'liability_name': request.data.get('account_nickname'),
-                         'liability_amount': request.data.get('balance')}
-            liability_serializer = LiabilitySerializer(data=liability)
-
-            if not liability_serializer.is_valid():
-                return Response(
-                {'Message': 'Failed to add Account as Liability'}, 
-                status=status.HTTP_200_OK)
-            liability_serializer.save(user=user)
-        else:
-            asset = {'asset_name': request.data.get('account_nickname'),
-                         'asset_amount': request.data.get('balance')}
-            asset_serializer = AssetSerializer(data=asset)
-            if not asset_serializer.is_valid():
-                return Response(
-                {'Message': 'Failed to add Account as Asset'}, 
-                status=status.HTTP_200_OK)
-            asset_serializer.save(user=user)
 
         serializer.save(user=user)
 
@@ -808,4 +802,43 @@ class Reports(APIView):
         return Response(data, 
             status=status.HTTP_200_OK) 
 
+def get_plaid_client():
+    plaid_env_map = {
+        'sandbox': plaid.Environment.Sandbox,
+        'production': plaid.Environment.Production,
+    }
+    host = plaid_env_map.get(settings.PLAID_ENV.lower())
+    if host is None:
+        raise ValueError(f'Unsupported PLAID_ENV: {settings.PLAID_ENV}')
+
+    configuration = plaid.Configuration(
+        host=host,
+        api_key={
+            'clientId': settings.PLAID_CLIENT_ID,
+            'secret': settings.PLAID_SECRET,
+        },
+    )
+    api_client = plaid.ApiClient(configuration)
+    return plaid_api.PlaidApi(api_client)
+        
+class PlaidCreateLinkToken(APIView):
+    def post(self, request, format=None):
+        user = self.request.user
+
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        
+        client = get_plaid_client()
+        plaid_request = LinkTokenCreateRequest(
+            user=LinkTokenCreateRequestUser(client_user_id=str(user.id)),
+                                            client_name='Financial Planner',
+                                            products=[Products('transactions')],
+                                            country_codes=[CountryCode('CA')],
+                                            language='en',
+                                            )
+        response = client.link_token_create(plaid_request)
+
+        return Response({'link_token': response['link_token']}, status=status.HTTP_200_OK)
         

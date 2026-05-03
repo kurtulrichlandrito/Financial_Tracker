@@ -1,6 +1,7 @@
 venv/
 
 .env
+.env.development
 
 node_modules/
 __pycache__/

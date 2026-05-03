@@ -6,6 +6,7 @@ import CreateTransaction from "../components/transactions/CreateTransaction"
 import UploadFiles from "../components/statements/UploadStatements"
 import Charts from "../components/charts/Charts"
 import currencyFormatter from "../utils/currencyFormatter"
+import apiPost from "../utils/api"
 
 function DashboardPage() {
     const { globalRefresh, reload } = useOutletContext()
@@ -38,6 +39,12 @@ function DashboardPage() {
         navigate(`/transactions?q=${encodeURIComponent(search)}`)
     }
 
+    const handleAddBankAccount = async () => {
+        apiPost('/api/create-user-token')
+            .then((response) => response.json())
+            .then((data) => localStorage.setItem('link_token', data.link_token))
+    }
+
     return (
         <div className="page-stack">
             <section className="dashboard-hero">
@@ -63,6 +70,7 @@ function DashboardPage() {
                 <button className="action-card" onClick={() => toggle('transaction', true)}>+ Add Transaction</button>
                 <button className="action-card" onClick={() => toggle('upload', true)}>Upload Statement</button>
                 <button className="action-card" onClick={() => toggle('account', true)}>+ Add Account</button>
+                <button className="action-card" onClick={() => handleAddBankAccount()}>Link Bank Account</button>
             </section>
 
             <form className="page-card" onSubmit={handleSearch}>
