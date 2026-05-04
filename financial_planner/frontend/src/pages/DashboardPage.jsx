@@ -7,32 +7,43 @@ import UploadFiles from "../components/statements/UploadStatements"
 import Charts from "../components/charts/Charts"
 import currencyFormatter from "../utils/currencyFormatter"
 import apiPost from "../utils/api"
+import { usePlaidLink } from "react-plaid-link"
 
 function DashboardPage() {
     const { globalRefresh, reload } = useOutletContext()
     const [netWorth, setNetWorth] = useState({})
     const [recentTransactions, setRecentTransactions] = useState([])
-    const [open, setOpen] = useState({})
+    const [dialogOpen, setDialogOpen] = useState({})
     const [search, setSearch] = useState('')
+    const [linkToken, setLinkToken] = useState(null)
+    const [shouldOpenPlaid, setShouldOpenPlaid] = useState(false)
+    const [isLinkTokenLoading, setIsLinkTokenLoading] = useState(false)
     const navigate = useNavigate()
 
-    const toggle = (key, state) => setOpen((current) => ({ ...current, [key]: state }))
+    const toggle = (key, state) => setDialogOpen((current) => ({ ...current, [key]: state }))
 
     useEffect(() => {
+        getNetWorth()
+        getTransactions()
+    }, [globalRefresh])
+
+    const getNetWorth = () => {
         fetch('/api/net-worth/', {
             method: 'GET',
             credentials: 'include'
         })
             .then((response) => response.json())
             .then((data) => setNetWorth(data))
+    }
 
+    const getTransactions = () => {
         fetch('/api/transactions/?type=all&orderby=-transaction_date', {
             method: 'GET',
             credentials: 'include'
         })
             .then((response) => response.json())
             .then((data) => setRecentTransactions(data.slice(0, 10)))
-    }, [globalRefresh])
+    }
 
     const handleSearch = (event) => {
         event.preventDefault()
@@ -40,10 +51,47 @@ function DashboardPage() {
     }
 
     const handleAddBankAccount = async () => {
-        apiPost('/api/create-user-token')
-            .then((response) => response.json())
-            .then((data) => localStorage.setItem('link_token', data.link_token))
+        setIsLinkTokenLoading(true)
+
+        try {
+            const response = await apiPost('/api/create-user-token')
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.Message || 'Unable to create Plaid link token')
+            }
+
+            setLinkToken(data.link_token)
+            setShouldOpenPlaid(true)
+        } catch (error) {
+            console.error('Failed to initialize Plaid Link', error)
+            setShouldOpenPlaid(false)
+        } finally {
+            setIsLinkTokenLoading(false)
+        }
     }
+
+    const { open, ready } = usePlaidLink({
+        onSuccess: (public_token, metadata) => {
+            apiPost('/api/exchange-public-token', {
+                public_token,
+                accounts: metadata.accounts,
+                institution: metadata.institution
+            })
+        },
+        onExit: (err, metadata) => { },
+        onEvent: (eventName, metadata) => { },
+        token: linkToken,
+    })
+
+    useEffect(() => {
+        if (!shouldOpenPlaid || !ready) {
+            return
+        }
+
+        open()
+        setShouldOpenPlaid(false)
+    }, [shouldOpenPlaid, ready, open])
 
     return (
         <div className="page-stack">
@@ -70,7 +118,9 @@ function DashboardPage() {
                 <button className="action-card" onClick={() => toggle('transaction', true)}>+ Add Transaction</button>
                 <button className="action-card" onClick={() => toggle('upload', true)}>Upload Statement</button>
                 <button className="action-card" onClick={() => toggle('account', true)}>+ Add Account</button>
-                <button className="action-card" onClick={() => handleAddBankAccount()}>Link Bank Account</button>
+                <button className="action-card" onClick={handleAddBankAccount} disabled={isLinkTokenLoading}>
+                    {isLinkTokenLoading ? 'Loading Plaid...' : 'Link Bank Account'}
+                </button>
             </section>
 
             <form className="page-card" onSubmit={handleSearch}>
@@ -108,13 +158,13 @@ function DashboardPage() {
                 </div>
             </section>
 
-            <Dialog open={!!open.transaction} onClose={() => toggle('transaction', false)}>
+            <Dialog dialogOpen={!!dialogOpen.transaction} onClose={() => toggle('transaction', false)}>
                 <CreateTransaction type="expense" onRefresh={() => { reload(); toggle('transaction', false) }} />
             </Dialog>
-            <Dialog open={!!open.upload} onClose={() => toggle('upload', false)}>
+            <Dialog dialogOpen={!!dialogOpen.upload} onClose={() => toggle('upload', false)}>
                 <UploadFiles onRefresh={reload} />
             </Dialog>
-            <Dialog open={!!open.account} onClose={() => toggle('account', false)}>
+            <Dialog dialogOpen={!!dialogOpen.account} onClose={() => toggle('account', false)}>
                 <CreateAccount onRefresh={reload} onClose={() => toggle('account', false)} />
             </Dialog>
         </div>
