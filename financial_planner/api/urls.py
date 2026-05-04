@@ -18,5 +18,7 @@ urlpatterns = [
     path('search', Search.as_view()),
     path('categorize-transactions/', BatchCategorizeTransactions.as_view()),
     path('reports/', Reports.as_view()),
-    path('create-user-token', PlaidCreateLinkToken.as_view()),
+    path('create-user-token/', PlaidCreateLinkToken.as_view()),
+    path('exchange-public-token/', PlaidExchangePublicTokenForAccessToken.as_view()),
+    
 ]

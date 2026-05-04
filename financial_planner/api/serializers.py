@@ -153,3 +153,4 @@ class CategorySerializer(ModelSerializer):
                   'transaction_category',
                   'transaction_type') 
         read_only_fields = ('user',)
+

@@ -10,6 +10,19 @@ class ExpenseCategory(models.Model):
     def __str__(self):
         return self.expense_category
 
+class PlaidItem(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="plaid_items")
+    item_id = models.CharField(max_length=255, unique=True)
+    access_token = models.TextField()  # TODO encrypt this in real apps
+    institution_id = models.CharField(max_length=255, blank=True, null=True)
+    institution_name = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    cursor = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user} | {self.institution_name}"
+
 class Account(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     account_nickname = models.CharField(max_length=100)
@@ -17,10 +30,14 @@ class Account(models.Model):
     date_added = models.DateField(default=timezone.now)
     balance = models.DecimalField(max_digits=10, decimal_places=2)
     date_updated = models.DateField(null=True)
+    plaid_item = models.ForeignKey(PlaidItem, on_delete=models.CASCADE, null=True, blank=True)
+    plaid_account_id = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return (f"{self.account_type} | {self.account_nickname} | "
         + f"{self.balance} | {self.date_added}")
+    
+
 
 class Expense(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -98,7 +115,9 @@ class Transaction(models.Model):
     transaction_notes = models.TextField(null=True, blank=True)
     transaction_type = models.CharField(max_length=100)
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    plaid_transaction_id = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
         return (f"{self.transaction_date} | {self.transaction_amount}" +
                 f"| {self.transaction_type} | {self.transaction_category}")
+    

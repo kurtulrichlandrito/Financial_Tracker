@@ -12,13 +12,15 @@ from datetime import date
 from django.db.models import F, Q, Sum
 import plaid
 from plaid.api import plaid_api
+from plaid.model.products import Products
+from plaid.model.country_code import CountryCode
+from plaid.model.accounts_get_request import AccountsGetRequest
 from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
 from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
+from plaid.model.transactions_sync_request import TransactionsSyncRequest
 import os
 from django.conf import settings
-from plaid.model.products import Products
-from plaid.model.country_code import CountryCode
 
 
 PLAID_CLIENT_ID = os.getenv('PLAID_CLIENT_ID')
@@ -841,4 +843,107 @@ class PlaidCreateLinkToken(APIView):
         response = client.link_token_create(plaid_request)
 
         return Response({'link_token': response['link_token']}, status=status.HTTP_200_OK)
+
+class PlaidExchangePublicTokenForAccessToken(APIView):
+    def post(self, request, format=None):
+        user = self.request.user
+
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+        public_token = (request.GET.get('public_token') or 
+                        self.request.data.get('public_token'))
+        institution = request.data.get("institution", {})
+
+        institution_name = institution.get("name")
+        institution_id = institution.get("institution_id")
+        client = get_plaid_client()
+        try:
+            exchange_request = ItemPublicTokenExchangeRequest(
+                public_token=public_token)
+            exchange_response = client.item_public_token_exchange(exchange_request)
+            access_token = exchange_response['access_token']
+            item_id = exchange_response['item_id']
+
+            plaid_item, created = PlaidItem.objects.update_or_create(
+                item_id=item_id,
+                defaults={
+                    'access_token': access_token,
+                    'user': user,
+                    'institution_id': institution_id,
+                    'institution_name': institution_name
+                }
+            )
+            import_accounts(plaid_item)
+            sync_transactions(plaid_item)
+            
+            return Response(
+                {'Message': 'Bank Successfully Connected'}, 
+                status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response(
+                {'Message': 'Unable to create an access token'}, 
+                status=status.HTTP_400_BAD_REQUEST)
         
+def import_accounts(plaid_item):
+    request = AccountsGetRequest(
+        access_token=plaid_item.access_token
+    )
+    client = get_plaid_client()
+    response = client.accounts_get(request)
+
+    for account in response["accounts"]:
+        Account.objects.update_or_create(
+            plaid_account_id=account["account_id"],
+            defaults={
+                "user": plaid_item.user,
+                "plaid_item": plaid_item,
+                "account_nickname": account["name"],
+                "account_type": account["type"],
+                "balance": account["balances"]["current"] or 0,
+                "date_updated": date.today(),
+            }
+        )
+
+def sync_transactions(plaid_item):
+    kwargs = {
+    "access_token": plaid_item.access_token,
+    }
+
+    if plaid_item.cursor:
+        kwargs["cursor"] = plaid_item.cursor
+    client = get_plaid_client()
+    request = TransactionsSyncRequest(**kwargs)
+    response = client.transactions_sync(request)
+
+    added = response["added"]
+
+    for txn in added:
+        account = Account.objects.get(
+            plaid_account_id=txn["account_id"]
+        )
+        print(txn.get("category"))
+        if txn.get("category"):
+            transaction_category = Category.objects.update_or_create(
+                user=plaid_item.user,
+                transaction_category=txn["category"][0]
+            )
+        else:
+            transaction_category = None
+        Transaction.objects.update_or_create(
+            plaid_transaction_id=txn["transaction_id"],
+            defaults={
+                "user": plaid_item.user,
+                "account": account,
+                "transaction_amount": txn["amount"],
+                "transaction_notes": txn["name"],
+                "transaction_date": txn["date"],
+                "transaction_category": transaction_category,
+            }
+        )
+
+    # save cursor for next sync
+    plaid_item.cursor = response["next_cursor"]
+    plaid_item.save()

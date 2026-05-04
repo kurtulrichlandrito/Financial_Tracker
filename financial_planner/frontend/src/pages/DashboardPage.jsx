@@ -54,7 +54,7 @@ function DashboardPage() {
         setIsLinkTokenLoading(true)
 
         try {
-            const response = await apiPost('/api/create-user-token')
+            const response = await apiPost('/api/create-user-token/')
             const data = await response.json()
 
             if (!response.ok) {
@@ -73,7 +73,7 @@ function DashboardPage() {
 
     const { open, ready } = usePlaidLink({
         onSuccess: (public_token, metadata) => {
-            apiPost('/api/exchange-public-token', {
+            apiPost('/api/exchange-public-token/', {
                 public_token,
                 accounts: metadata.accounts,
                 institution: metadata.institution
