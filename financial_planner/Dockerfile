@@ -21,7 +21,6 @@ COPY . .
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
 
 RUN sed -i 's/\r$//' start.sh \
-    && chmod +x start.sh \
-    && python manage.py collectstatic --noinput
+    && chmod +x start.sh
 
 CMD ["./start.sh"]
