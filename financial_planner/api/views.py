@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import *
 from django.contrib.auth import authenticate, login, logout
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.text import slugify
 from .utils.data_extraction import data_extractor
 from .utils.group_by_description import get_or_create_group
@@ -20,15 +21,9 @@ from plaid.model.link_token_create_request import LinkTokenCreateRequest
 from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
 from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
-import os
 from django.conf import settings
 from google.oauth2 import id_token
 from google.auth.transport import requests
-
-
-PLAID_CLIENT_ID = os.getenv('PLAID_CLIENT_ID')
-PLAID_SECRET = os.getenv('PLAID_SECRET')
-PLAID_ENV = os.getenv('PLAID_ENV')
 
 DEFAULT_TRANSACTION_ORDERING = '-transaction_date'
 TRANSACTION_ORDERING_FIELDS = {
@@ -824,6 +819,11 @@ class Reports(APIView):
             status=status.HTTP_200_OK) 
 
 def get_plaid_client():
+    if not settings.PLAID_CLIENT_ID or not settings.PLAID_SECRET:
+        raise ImproperlyConfigured(
+            'PLAID_CLIENT_ID and PLAID_SECRET must be set.'
+        )
+
     plaid_env_map = {
         'sandbox': plaid.Environment.Sandbox,
         'production': plaid.Environment.Production,
@@ -850,8 +850,15 @@ class PlaidCreateLinkToken(APIView):
             return Response(
                 {'Message': 'User Not Does not Exist'}, 
                 status=status.HTTP_401_UNAUTHORIZED)
-        
-        client = get_plaid_client()
+
+        try:
+            client = get_plaid_client()
+        except ImproperlyConfigured:
+            return Response(
+                {'Message': 'Plaid is not configured on the server'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         plaid_request = LinkTokenCreateRequest(
             user=LinkTokenCreateRequestUser(client_user_id=str(user.id)),
                                             client_name='Financial Planner',
@@ -877,8 +884,8 @@ class PlaidExchangePublicTokenForAccessToken(APIView):
 
         institution_name = institution.get("name")
         institution_id = institution.get("institution_id")
-        client = get_plaid_client()
         try:
+            client = get_plaid_client()
             exchange_request = ItemPublicTokenExchangeRequest(
                 public_token=public_token)
             exchange_response = client.item_public_token_exchange(exchange_request)
@@ -969,6 +976,12 @@ def sync_transactions(plaid_item):
 
 class GoogleLogin(APIView):
     def post(self, request, format=None):
+        if not settings.GOOGLE_OAUTH_CLIENT_ID:
+            return Response(
+                {'Message': 'Google OAuth is not configured on the server'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         credential = request.data.get('credential')
         if not credential:
             return Response(

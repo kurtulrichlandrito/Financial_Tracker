@@ -25,15 +25,11 @@ environ.Env.read_env(env_file)
 
 FRONTEND_DIST = BASE_DIR / 'frontend' / 'dist'
 IS_RAILWAY = env('RAILWAY_ENVIRONMENT', default=None) is not None
+DEBUG = env.bool('DEBUG', default=not IS_RAILWAY)
 PLAID_ENV = env("PLAID_ENV", default="Sandbox")
-PLAID_CLIENT_ID = env("PLAID_CLIENT_ID")
-PLAID_SECRET = env("PLAID_SECRET")
-GOOGLE_OAUTH_CLIENT_ID = env('GOOGLE_OAUTH_CLIENT_ID')
-if not GOOGLE_OAUTH_CLIENT_ID:
-    raise ValueError(
-        'GOOGLE_OAUTH_CLIENT_ID is missing.'
-        'Have you put it in a file at core/.env ?'
-    )
+PLAID_CLIENT_ID = env("PLAID_CLIENT_ID", default="")
+PLAID_SECRET = env("PLAID_SECRET", default="")
+GOOGLE_OAUTH_CLIENT_ID = env('GOOGLE_OAUTH_CLIENT_ID', default="")
  
 # We need these lines below to allow the Google sign in popup to work.
 SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
@@ -46,8 +42,6 @@ SECRET_KEY = env('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = env.bool('DEBUG', default=not IS_RAILWAY)
-
 ALLOWED_HOSTS = env.list(
     'ALLOWED_HOSTS',
     default=['localhost', '127.0.0.1', '[::1]', '.up.railway.app']
