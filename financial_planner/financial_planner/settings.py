@@ -28,19 +28,25 @@ IS_RAILWAY = env('RAILWAY_ENVIRONMENT', default=None) is not None
 PLAID_ENV = env("PLAID_ENV", default="Sandbox")
 PLAID_CLIENT_ID = env("PLAID_CLIENT_ID")
 PLAID_SECRET = env("PLAID_SECRET")
-
+GOOGLE_OAUTH_CLIENT_ID = env('GOOGLE_OAUTH_CLIENT_ID')
+if not GOOGLE_OAUTH_CLIENT_ID:
+    raise ValueError(
+        'GOOGLE_OAUTH_CLIENT_ID is missing.'
+        'Have you put it in a file at core/.env ?'
+    )
+ 
+# We need these lines below to allow the Google sign in popup to work.
+SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env(
-    'SECRET_KEY',
-    default='django-insecure-%vn81vq#!+((1%19$#8*4+-o=vu2l03a69w3exdxizoq7hguv!'
-)
+
+SECRET_KEY = env('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool('DEBUG', default=not IS_RAILWAY)
+# DEBUG = env.bool('DEBUG', default=not IS_RAILWAY)
 
 ALLOWED_HOSTS = env.list(
     'ALLOWED_HOSTS',

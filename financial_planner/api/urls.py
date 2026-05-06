@@ -5,6 +5,7 @@ urlpatterns = [
 
     path('signup/', CreateUser.as_view()),
     path('login/', LoginUser.as_view()),
+    path('google-login/', GoogleLogin.as_view()),
     path('logout/', LogoutUser.as_view()),
     path('check-auth/', CheckAuth.as_view()),
     path('transactions/', Transactions.as_view()),

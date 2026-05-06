@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import *
 from django.contrib.auth import authenticate, login, logout
+from django.utils.text import slugify
 from .utils.data_extraction import data_extractor
 from .utils.group_by_description import get_or_create_group
 import json
@@ -21,6 +22,8 @@ from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchan
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
 import os
 from django.conf import settings
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 
 PLAID_CLIENT_ID = os.getenv('PLAID_CLIENT_ID')
@@ -60,6 +63,22 @@ def validate_transaction_relationships(serializer, user):
             status=status.HTTP_404_NOT_FOUND)
 
     return None
+
+
+def build_google_username(email, given_name='', family_name=''):
+    base_username = email.split('@')[0] if email else ''
+    if not base_username:
+        base_username = slugify(f'{given_name} {family_name}') or 'google-user'
+
+    candidate = base_username[:150]
+    suffix = 1
+
+    while User.objects.filter(username=candidate).exclude(email=email).exists():
+        suffix_text = f'-{suffix}'
+        candidate = f"{base_username[:150 - len(suffix_text)]}{suffix_text}"
+        suffix += 1
+
+    return candidate
 
 # Create your views here.
 class CreateUser(APIView):
@@ -947,3 +966,63 @@ def sync_transactions(plaid_item):
     # save cursor for next sync
     plaid_item.cursor = response["next_cursor"]
     plaid_item.save()
+
+class GoogleLogin(APIView):
+    def post(self, request, format=None):
+        credential = request.data.get('credential')
+        if not credential:
+            return Response(
+                {'Message': 'Google credential is required'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user_data = id_token.verify_oauth2_token(
+                credential,
+                requests.Request(),
+                settings.GOOGLE_OAUTH_CLIENT_ID,
+            )
+        except ValueError:
+            return Response(
+                {'Message': 'Invalid Google credential'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        email = user_data.get('email')
+        if not email or not user_data.get('email_verified'):
+            return Response(
+                {'Message': 'Google account email could not be verified'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        given_name = user_data.get('given_name', '')
+        family_name = user_data.get('family_name', '')
+
+        user = User.objects.filter(email__iexact=email).first()
+        created = False
+
+        if user is None:
+            user = User(
+                username=build_google_username(email, given_name, family_name),
+                email=email,
+                first_name=given_name,
+                last_name=family_name,
+            )
+            user.set_unusable_password()
+            user.save()
+            created = True
+        else:
+            updated_fields = []
+            if given_name and user.first_name != given_name:
+                user.first_name = given_name
+                updated_fields.append('first_name')
+            if family_name and user.last_name != family_name:
+                user.last_name = family_name
+                updated_fields.append('last_name')
+            if updated_fields:
+                user.save(update_fields=updated_fields)
+
+        login(request, user)
+        return Response(
+            {
+                'Message': 'Login Successful',
+                'created': created,
+            },
+            status=status.HTTP_200_OK)

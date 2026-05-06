@@ -510,6 +510,29 @@ tbody tr:hover {
   padding: var(--space-3);
 }
 
+.auth-divider {
+  align-items: center;
+  color: var(--color-text-secondary);
+  display: flex;
+  font-size: var(--text-sm);
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  background: var(--color-border);
+  content: '';
+  flex: 1;
+  height: 1px;
+}
+
+.google-auth-button {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
 .auth-footer {
   color: var(--color-text-secondary);
   font-size: var(--text-sm);

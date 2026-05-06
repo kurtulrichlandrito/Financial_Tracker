@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import apiPost from "../../utils/api"
+import GoogleAuthButton from "./GoogleAuthButton"
 
 const initialForm = {
     first_name: '',
@@ -10,6 +11,7 @@ const initialForm = {
     password: '',
     confirmPassword: ''
 }
+
 
 function Register() {
     const navigate = useNavigate()
@@ -26,7 +28,6 @@ function Register() {
         }))
         setMessage('')
     }
-
     const handleRegister = (event) => {
         event.preventDefault()
 
@@ -112,6 +113,12 @@ function Register() {
                         {isSubmitting ? 'Creating...' : 'Register'}
                     </button>
                 </form>
+
+                <GoogleAuthButton
+                    setMessage={setMessage}
+                    setIsSubmitting={setIsSubmitting}
+                    text="signup_with"
+                />
 
                 <p className="auth-footer">
                     Already have an account? <Link className="link" to="/login">Login</Link>
