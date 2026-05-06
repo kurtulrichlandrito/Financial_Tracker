@@ -114,6 +114,24 @@ class UserDataIsolationTests(TestCase):
             account=self.other_account
         ).exists())
 
+    def test_transaction_create_allows_manual_transaction_without_plaid_id(self):
+        self.login()
+
+        response = self.client.post('/api/transactions/', {
+            'account_id': self.account.id,
+            'transaction_date': '2026-04-03',
+            'transaction_amount': '12.00',
+            'transaction_notes': 'Manual entry',
+            'transaction_type': 'expense',
+        }, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        transaction = Transaction.objects.get(
+            user=self.user,
+            transaction_notes='Manual entry'
+        )
+        self.assertIsNone(transaction.plaid_transaction_id)
+
     def test_transaction_update_rejects_another_users_category(self):
         self.login()
 

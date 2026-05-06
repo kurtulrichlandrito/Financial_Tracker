@@ -115,7 +115,12 @@ class Transaction(models.Model):
     transaction_notes = models.TextField(null=True, blank=True)
     transaction_type = models.CharField(max_length=100)
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
-    plaid_transaction_id = models.CharField(max_length=255, unique=True)
+    plaid_transaction_id = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return (f"{self.transaction_date} | {self.transaction_amount}" +
