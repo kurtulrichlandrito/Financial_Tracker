@@ -1039,3 +1039,18 @@ class GoogleLogin(APIView):
                 'created': created,
             },
             status=status.HTTP_200_OK)
+
+class AiAssistant(APIView):
+    LANGFLOW_URL = 'http://localhost:7860/api/v1/webhook/06fac842-9be0-46a0-bbc0-565962f844ff'
+
+    def post(self, request, format=None):
+        response = request.post(self.LANGFLOW_URL, json=request)
+        user=self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'Message': 'User Not Does not Exist'}, 
+                status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response(
+                    response, 
+                    status=status.HTTP_200_OK)

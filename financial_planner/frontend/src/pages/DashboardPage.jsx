@@ -7,6 +7,7 @@ import UploadFiles from "../components/statements/UploadStatements"
 import Charts from "../components/charts/Charts"
 import currencyFormatter from "../utils/currencyFormatter"
 import apiPost from "../utils/api"
+import AiAssistant from "../pages/AiAssistant"
 import { usePlaidLink } from "react-plaid-link"
 
 function DashboardPage() {
@@ -118,6 +119,7 @@ function DashboardPage() {
                 <button className="action-card" onClick={() => toggle('transaction', true)}>+ Add Transaction</button>
                 <button className="action-card" onClick={() => toggle('upload', true)}>Upload Statement</button>
                 <button className="action-card" onClick={() => toggle('account', true)}>+ Add Account</button>
+                <button className="action-card" onClick={() => toggle('aiassistant', true)}>Ai Assistant</button>
                 <button className="action-card" onClick={handleAddBankAccount} disabled={isLinkTokenLoading}>
                     {isLinkTokenLoading ? 'Loading Plaid...' : 'Link Bank Account'}
                 </button>
@@ -158,14 +160,17 @@ function DashboardPage() {
                 </div>
             </section>
 
-            <Dialog dialogOpen={!!dialogOpen.transaction} onClose={() => toggle('transaction', false)}>
+            <Dialog open={!!dialogOpen.transaction} onClose={() => toggle('transaction', false)}>
                 <CreateTransaction type="expense" onRefresh={() => { reload(); toggle('transaction', false) }} />
             </Dialog>
-            <Dialog dialogOpen={!!dialogOpen.upload} onClose={() => toggle('upload', false)}>
+            <Dialog open={!!dialogOpen.upload} onClose={() => toggle('upload', false)}>
                 <UploadFiles onRefresh={reload} />
             </Dialog>
-            <Dialog dialogOpen={!!dialogOpen.account} onClose={() => toggle('account', false)}>
+            <Dialog open={!!dialogOpen.account} onClose={() => toggle('account', false)}>
                 <CreateAccount onRefresh={reload} onClose={() => toggle('account', false)} />
+            </Dialog>
+            <Dialog open={!!dialogOpen.aiassistant} onClose={() => toggle('aiassistant', false)}>
+                <AiAssistant onClose={() => toggle('aiassistant', false)} />
             </Dialog>
         </div>
     )

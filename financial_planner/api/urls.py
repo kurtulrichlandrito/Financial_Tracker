@@ -21,5 +21,5 @@ urlpatterns = [
     path('reports/', Reports.as_view()),
     path('create-user-token/', PlaidCreateLinkToken.as_view()),
     path('exchange-public-token/', PlaidExchangePublicTokenForAccessToken.as_view()),
-    
+    path('ai-assistant/', AiAssistant.as_view()),
 ]
